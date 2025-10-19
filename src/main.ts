@@ -8,19 +8,19 @@ import { PlanesShader } from "./planes/PlanesShader.ts";
 import { FlightUtils } from "./flights/FlightUtils.ts";
 import { Stars } from "./space/Stars.ts";
 import { Earth } from "./space/Earth.ts";
-import { Controls } from "./Controls.ts";
+import { Controls } from "./managers/Controls.ts";
 import { EarthControlsManager } from "./managers/EarthControlsManager.ts";
 import { FlightControlsManager } from "./managers/FlightControlsManager.ts";
 import { FlightPathManager } from "./managers/FlightPathManager.ts";
 import { PlaneControlsManager } from "./managers/PlaneControlsManager.ts";
-import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
+import { flights as dataFlights, type Flight as FlightData } from "./common/Data.ts";
 import { planes as planeDefinitions } from "./planes/Planes.ts";
 import {
   getSunVector3,
   getCurrentUtcTimeHours,
   animateCameraToPosition,
   hoursToTimeString,
-} from "./Utils.ts";
+} from "./common/Utils.ts";
 import { UIManager } from "./managers/UIManager.ts";
 import type {
   PlaneEntry,

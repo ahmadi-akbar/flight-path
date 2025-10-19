@@ -3,7 +3,7 @@ import { Flight } from "../flights/Flight.ts";
 import { Curves } from "../curves/Curves.ts";
 import { PlanesShader } from "../planes/PlanesShader.ts";
 import { FlightUtils } from "../flights/FlightUtils.ts";
-import type { Flight as FlightData } from "../Data.ts";
+import type { Flight as FlightData } from "../common/Data.ts";
 import type {
   FlightConfig,
   FlightParams,

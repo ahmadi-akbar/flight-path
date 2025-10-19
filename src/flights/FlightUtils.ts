@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { Geolocation } from "../Data.ts";
-import { latLngToVector3 } from "../Utils.ts";
+import type { Geolocation } from "../common/Data.ts";
+import { latLngToVector3 } from "../common/Utils.ts";
 import type {
   Bounds,
   RandomCurveOptions,

@@ -3,7 +3,7 @@ import {
   getCurrentUtcTimeHours,
   hoursToTimeString,
   timeStringToHours,
-} from "./Utils.js";
+} from "../common/Utils.js";
 import type {
   GUIFolder,
   ColorObject,

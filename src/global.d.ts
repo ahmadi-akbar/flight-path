@@ -1,4 +1,4 @@
-import type { Controls } from "./Controls.ts";
+import type { Controls } from "./managers/Controls.ts";
 
 declare global {
   interface Window {

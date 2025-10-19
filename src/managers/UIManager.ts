@@ -2,7 +2,7 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import type { PerspectiveCamera } from "three";
 import type { Earth } from "../space/Earth.ts";
-import { vector3ToLatLng } from "../Utils.ts";
+import { vector3ToLatLng } from "../common/Utils.ts";
 
 /**
  * UIManager centralizes DOM overlay helpers such as the loading screen,
