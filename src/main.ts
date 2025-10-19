@@ -11,6 +11,7 @@ import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
 import { FlightControlsManager } from "./FlightControlsManager.ts";
 import { FlightPathManager } from "./FlightPathManager.ts";
+import { PlaneControlsManager } from "./PlaneControlsManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
 import { planes as planeDefinitions } from "./Planes.ts";
 import {
@@ -290,6 +291,21 @@ const flightControlsManager = new FlightControlsManager({
       controlsManager.guiControls?.returnFlight !== value
     ) {
       controlsManager.setReturnFlight(value);
+    }
+  },
+});
+
+const planeControlsManager = new PlaneControlsManager({
+  params,
+  getFlights: () => flights,
+  getPreGeneratedConfigs: () => preGeneratedConfigs,
+  syncPlaneSize: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setPlaneSize === "function" &&
+      controlsManager.guiControls?.planeSize !== value
+    ) {
+      controlsManager.setPlaneSize(value);
     }
   },
 });
@@ -1103,18 +1119,7 @@ function updateSegmentCount(count: number): void {
 
 // Function to update plane size
 function updatePlaneSize(size: number): void {
-  params.planeSize = size;
-  flights.forEach((flight) => flight.setPaneSize(size));
-  preGeneratedConfigs = preGeneratedConfigs.map((config) => ({
-    ...config,
-    paneSize: size,
-  }));
-  if (controlsManager && typeof controlsManager.setPlaneSize === "function") {
-    if (controlsManager.guiControls?.planeSize !== size) {
-      controlsManager.setPlaneSize(size);
-    }
-  }
-  // Updates will be applied in animation loop via applyUpdates()
+  planeControlsManager.setPlaneSize(size);
 }
 
 // Function to update plane elevation offset
