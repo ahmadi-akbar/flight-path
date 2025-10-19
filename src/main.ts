@@ -277,7 +277,8 @@ const flightControlsManager = new FlightControlsManager({
     ),
   createFlightFromConfig,
   updatePathVisibility: () => flightPathManager.applyVisibility(),
-  updatePlaneVisibility,
+  updatePlaneVisibility: () =>
+    planeControlsManager.setHidePlane(params.hidePlane),
   syncFlightCount: (value: number) => {
     if (
       controlsManager &&
@@ -588,30 +589,6 @@ function applyPaneColorMode(): void {
   });
 }
 
-function updatePlaneVisibility(): void {
-  if (!mergedPanes) return;
-  const visibleCount = params.hidePlane ? 0 : flights.length;
-  mergedPanes.setActivePaneCount(visibleCount);
-  if (typeof mergedPanes.setPlanesVisible === "function") {
-    mergedPanes.setPlanesVisible(!params.hidePlane);
-  }
-}
-
-function setHidePlane(value: boolean): void {
-  const shouldHide = !!value;
-  if (params.hidePlane !== shouldHide) {
-    params.hidePlane = shouldHide;
-  }
-
-  updatePlaneVisibility();
-
-  if (controlsManager && typeof controlsManager.setHidePlane === "function") {
-    if (controlsManager.guiControls?.hidePlane !== shouldHide) {
-      controlsManager.setHidePlane(shouldHide);
-    }
-  }
-}
-
 function toggleAtmosphereEffect(enabled: boolean): void {
   if (earth && earth.atmosphere) {
     earth.atmosphere.mesh.visible = enabled;
@@ -734,7 +711,7 @@ function setupGlobalControls(): void {
         planeControlsManager.setPaneStyle(value);
       },
       onHidePlaneChange: (value: boolean) => {
-        setHidePlane(value);
+        planeControlsManager.setHidePlane(value);
       },
       onDashSizeChange: (value: number) => {
         updateDashSize(value);
@@ -1104,7 +1081,7 @@ function initializeFlights(): void {
 
   // Update visible counts in merged renderers
   flightPathManager.applyVisibility();
-  updatePlaneVisibility();
+  planeControlsManager.setHidePlane(params.hidePlane);
 
   flightControlsManager.setReturnFlight(params.returnFlight);
 }

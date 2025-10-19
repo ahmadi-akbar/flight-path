@@ -14,6 +14,7 @@ interface PlaneControlsManagerOptions {
   fallbackPlaneColor: number;
   syncAnimationSpeed?: (value: number) => void;
   syncElevationOffset?: (value: number) => void;
+  syncHidePlane?: (value: boolean) => void;
 }
 
 export class PlaneControlsManager {
@@ -30,6 +31,7 @@ export class PlaneControlsManager {
   private fallbackPlaneColor: number;
   private syncAnimationSpeed?: (value: number) => void;
   private syncElevationOffset?: (value: number) => void;
+  private syncHidePlane?: (value: boolean) => void;
 
   constructor(options: PlaneControlsManagerOptions) {
     this.params = options.params;
@@ -45,6 +47,7 @@ export class PlaneControlsManager {
     this.fallbackPlaneColor = options.fallbackPlaneColor;
     this.syncAnimationSpeed = options.syncAnimationSpeed;
     this.syncElevationOffset = options.syncElevationOffset;
+    this.syncHidePlane = options.syncHidePlane;
   }
 
   public setPlaneSize(value: number): void {
@@ -170,6 +173,28 @@ export class PlaneControlsManager {
 
     if (typeof this.syncElevationOffset === "function") {
       this.syncElevationOffset(offset);
+    }
+  }
+
+  public setHidePlane(value: boolean): void {
+    const shouldHide = Boolean(value);
+    if (this.params.hidePlane !== shouldHide) {
+      this.params.hidePlane = shouldHide;
+    }
+
+    const mergedPanes = this.getMergedPanes();
+    if (mergedPanes) {
+      const visibleCount = shouldHide ? 0 : this.getFlights().length;
+      if (typeof mergedPanes.setActivePaneCount === "function") {
+        mergedPanes.setActivePaneCount(visibleCount);
+      }
+      if (typeof mergedPanes.setPlanesVisible === "function") {
+        mergedPanes.setPlanesVisible(!shouldHide);
+      }
+    }
+
+    if (typeof this.syncHidePlane === "function") {
+      this.syncHidePlane(shouldHide);
     }
   }
 
