@@ -9,7 +9,7 @@ import { FlightUtils } from "./FlightUtils.ts";
 import { Stars } from "./Stars.ts";
 import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
-import { ControlsManager as FlightControlManager } from "./ControlsManager.ts";
+import { FlightControlsManager } from "./FlightControlsManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
 import { planes as planeDefinitions } from "./Planes.ts";
 import {
@@ -226,7 +226,7 @@ const params: GuiParams = {
   returnFlight: true,
 };
 
-const flightControlsManager = new FlightControlManager({
+const flightControlsManager = new FlightControlsManager({
   params,
   maxFlights: MAX_FLIGHTS,
   getFlights: () => flights,

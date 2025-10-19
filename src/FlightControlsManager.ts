@@ -33,7 +33,7 @@ interface FlightParams {
   randomSpeed: boolean;
 }
 
-interface ControlsManagerOptions {
+interface FlightControlsManagerOptions {
   params: FlightParams;
   maxFlights: number;
   getFlights: () => Flight[];
@@ -51,7 +51,7 @@ interface ControlsManagerOptions {
   syncReturnFlight?: (value: boolean) => void;
 }
 
-export class ControlsManager {
+export class FlightControlsManager {
   private params: FlightParams;
   private maxFlights: number;
   private getFlights: () => Flight[];
@@ -72,7 +72,7 @@ export class ControlsManager {
   private syncFlightCount?: (value: number) => void;
   private syncReturnFlight?: (value: boolean) => void;
 
-  constructor(options: ControlsManagerOptions) {
+  constructor(options: FlightControlsManagerOptions) {
     this.params = options.params;
     this.maxFlights = options.maxFlights;
     this.getFlights = options.getFlights;
