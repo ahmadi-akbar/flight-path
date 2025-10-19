@@ -227,6 +227,39 @@ const params: GuiParams = {
   returnFlight: true,
 };
 
+const flightPathManager = new FlightPathManager({
+  params,
+  getMergedCurves: () => mergedCurves,
+  getFlightCount: () => flights.length,
+  syncDashSize: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setDashSize === "function" &&
+      controlsManager.guiControls?.dashSize !== value
+    ) {
+      controlsManager.setDashSize(value);
+    }
+  },
+  syncGapSize: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setGapSize === "function" &&
+      controlsManager.guiControls?.gapSize !== value
+    ) {
+      controlsManager.setGapSize(value);
+    }
+  },
+  syncHidePath: (value: boolean) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setHidePath === "function" &&
+      controlsManager.guiControls?.hidePath !== value
+    ) {
+      controlsManager.setHidePath(value);
+    }
+  },
+});
+
 const flightControlsManager = new FlightControlsManager({
   params,
   maxFlights: MAX_FLIGHTS,
@@ -239,7 +272,7 @@ const flightControlsManager = new FlightControlsManager({
   resolvePaneColor,
   resolveAnimationSpeed,
   createFlightFromConfig,
-  updatePathVisibility,
+  updatePathVisibility: () => flightPathManager.applyVisibility(),
   updatePlaneVisibility,
   syncFlightCount: (value: number) => {
     if (
@@ -257,20 +290,6 @@ const flightControlsManager = new FlightControlsManager({
       controlsManager.guiControls?.returnFlight !== value
     ) {
       controlsManager.setReturnFlight(value);
-    }
-  },
-});
-
-const flightPathManager = new FlightPathManager({
-  params,
-  getMergedCurves: () => mergedCurves,
-  syncDashSize: (value: number) => {
-    if (
-      controlsManager &&
-      typeof controlsManager.setDashSize === "function" &&
-      controlsManager.guiControls?.dashSize !== value
-    ) {
-      controlsManager.setDashSize(value);
     }
   },
 });
@@ -505,12 +524,6 @@ function applyPaneColorMode(): void {
     const color = resolvePaneColor(config);
     flight.setPaneColor(color);
   });
-}
-
-function updatePathVisibility(): void {
-  if (!mergedCurves) return;
-  const visibleCount = params.hidePath ? 0 : flights.length;
-  mergedCurves.setVisibleCurveCount(visibleCount);
 }
 
 function updatePlaneVisibility(): void {
@@ -1068,7 +1081,7 @@ function initializeFlights(): void {
   }
 
   // Update visible counts in merged renderers
-  updatePathVisibility();
+  flightPathManager.applyVisibility();
   updatePlaneVisibility();
 
   flightControlsManager.setReturnFlight(params.returnFlight);
@@ -1164,25 +1177,11 @@ function updateDashSize(size: number): void {
 }
 
 function updateGapSize(size: number): void {
-  params.gapSize = size;
-  flightPathManager.applyDashPattern();
-
-  if (controlsManager && typeof controlsManager.setGapSize === "function") {
-    if (controlsManager.guiControls?.gapSize !== size) {
-      controlsManager.setGapSize(size);
-    }
-  }
+  flightPathManager.setGapSize(size);
 }
 
 function updateHidePath(value: boolean): void {
-  params.hidePath = !!value;
-  updatePathVisibility();
-
-  if (controlsManager && typeof controlsManager.setHidePath === "function") {
-    if (controlsManager.guiControls?.hidePath !== params.hidePath) {
-      controlsManager.setHidePath(params.hidePath);
-    }
-  }
+  flightPathManager.setHidePath(value);
 }
 
 function updateReturnFlight(value: boolean): void {
