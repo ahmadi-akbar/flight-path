@@ -271,7 +271,10 @@ const flightControlsManager = new FlightControlsManager({
   ensurePlaneDefaults,
   assignRandomPlane,
   resolvePaneColor,
-  resolveAnimationSpeed,
+  resolveAnimationSpeed: (config: Partial<FlightConfig> = {}) =>
+    planeControlsManager.resolveAnimationSpeed(
+      config as Record<string, any>,
+    ),
   createFlightFromConfig,
   updatePathVisibility: () => flightPathManager.applyVisibility(),
   updatePlaneVisibility,
@@ -319,6 +322,15 @@ const planeControlsManager = new PlaneControlsManager({
       if (controlsManager.guiControls?.planeColor !== formatted) {
         controlsManager.setPlaneColor(value);
       }
+    }
+  },
+  syncAnimationSpeed: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setAnimationSpeed === "function" &&
+      controlsManager.guiControls?.animationSpeed !== value
+    ) {
+      controlsManager.setAnimationSpeed(value);
     }
   },
 });
@@ -579,48 +591,6 @@ function setHidePlane(value: boolean): void {
   }
 }
 
-function generateRandomSpeed(): number {
-  return THREE.MathUtils.randFloat(0.03, 0.25);
-}
-
-function resolveAnimationSpeed(config: Partial<FlightConfig> = {}): number {
-  if (params.randomSpeed) {
-    if (typeof config._randomSpeed !== "number") {
-      const base =
-        typeof config.animationSpeed === "number"
-          ? config.animationSpeed
-          : generateRandomSpeed();
-      config._randomSpeed = base;
-    }
-    return config._randomSpeed;
-  }
-  return params.animationSpeed;
-}
-
-function applyAnimationSpeedMode(): void {
-  flights.forEach((flight, index) => {
-    const config = preGeneratedConfigs[index] || {};
-    const speed = resolveAnimationSpeed(config);
-    flight.setAnimationSpeed(speed);
-  });
-}
-
-function updateAnimationSpeed(value: number): void {
-  const numeric = Number(value);
-  const speed = Number.isFinite(numeric) ? numeric : params.animationSpeed;
-  params.animationSpeed = speed;
-  applyAnimationSpeedMode();
-
-  if (
-    controlsManager &&
-    typeof controlsManager.setAnimationSpeed === "function"
-  ) {
-    if (controlsManager.guiControls?.animationSpeed !== speed) {
-      controlsManager.setAnimationSpeed(speed);
-    }
-  }
-}
-
 function toggleAtmosphereEffect(enabled: boolean): void {
   if (earth && earth.atmosphere) {
     earth.atmosphere.mesh.visible = enabled;
@@ -734,7 +704,7 @@ function setupGlobalControls(): void {
       },
       onAnimationSpeedChange: (value: number) => {
         params.randomSpeed = false;
-        updateAnimationSpeed(value);
+        planeControlsManager.setAnimationSpeed(value);
       },
       onPlaneElevationChange: (value: number) => {
         updatePlaneElevation(value);
@@ -1097,7 +1067,9 @@ function initializeFlights(): void {
       curveColor: baseConfig.curveColor,
       paneSize: params.planeSize,
       paneColor: resolvePaneColor(baseConfig),
-      animationSpeed: resolveAnimationSpeed(baseConfig),
+      animationSpeed: planeControlsManager.resolveAnimationSpeed(
+        baseConfig as Record<string, any>,
+      ),
       elevationOffset:
         baseConfig.elevationOffset !== undefined
           ? baseConfig.elevationOffset
@@ -1246,7 +1218,7 @@ function randomizeAllFlightCurves(): void {
     flight.setCurveColor(updatedConfig.curveColor);
     const paneColor = resolvePaneColor(updatedConfig);
     flight.setPaneColor(paneColor);
-    const speed = resolveAnimationSpeed(updatedConfig);
+    const speed = planeControlsManager.resolveAnimationSpeed(updatedConfig);
     flight.setAnimationSpeed(speed);
     flight.setReturnFlight(params.returnFlight);
   });

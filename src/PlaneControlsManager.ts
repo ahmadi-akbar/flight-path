@@ -7,6 +7,7 @@ interface PlaneControlsManagerOptions {
   syncPlaneColor?: (value: number) => void;
   parsePlaneColor?: (value: any, fallback: number) => number;
   fallbackPlaneColor: number;
+  syncAnimationSpeed?: (value: number) => void;
 }
 
 export class PlaneControlsManager {
@@ -17,6 +18,7 @@ export class PlaneControlsManager {
   private syncPlaneColor?: (value: number) => void;
   private parsePlaneColor?: (value: any, fallback: number) => number;
   private fallbackPlaneColor: number;
+  private syncAnimationSpeed?: (value: number) => void;
 
   constructor(options: PlaneControlsManagerOptions) {
     this.params = options.params;
@@ -26,6 +28,7 @@ export class PlaneControlsManager {
     this.syncPlaneColor = options.syncPlaneColor;
     this.parsePlaneColor = options.parsePlaneColor;
     this.fallbackPlaneColor = options.fallbackPlaneColor;
+    this.syncAnimationSpeed = options.syncAnimationSpeed;
   }
 
   public setPlaneSize(value: number): void {
@@ -76,6 +79,53 @@ export class PlaneControlsManager {
     if (typeof this.syncPlaneColor === "function") {
       this.syncPlaneColor(normalized);
     }
+  }
+
+  public setAnimationSpeed(value: number): void {
+    const numeric = Number(value);
+    const speed = Number.isFinite(numeric) ? numeric : this.params.animationSpeed;
+
+    if (this.params.animationSpeed === speed) {
+      return;
+    }
+
+    this.params.animationSpeed = speed;
+    this.applyAnimationSpeedMode();
+
+    if (typeof this.syncAnimationSpeed === "function") {
+      this.syncAnimationSpeed(speed);
+    }
+  }
+
+  public applyAnimationSpeedMode(): void {
+    const flights = this.getFlights();
+    const configs = this.getPreGeneratedConfigs();
+
+    flights.forEach((flight, index) => {
+      const config = configs[index] || {};
+      const speed = this.resolveAnimationSpeed(config);
+      flight.setAnimationSpeed(speed);
+    });
+  }
+
+  public resolveAnimationSpeed(config: Record<string, any> = {}): number {
+    if (this.params.randomSpeed) {
+      if (typeof config._randomSpeed !== "number") {
+        const base =
+          typeof config.animationSpeed === "number"
+            ? config.animationSpeed
+            : this.generateRandomSpeed();
+        config._randomSpeed = base;
+      }
+      return config._randomSpeed;
+    }
+    return this.params.animationSpeed;
+  }
+
+  private generateRandomSpeed(): number {
+    const min = 0.03;
+    const max = 0.25;
+    return Math.random() * (max - min) + min;
   }
 
   private normalizeColor(value: any): number {
