@@ -302,6 +302,9 @@ const planeControlsManager = new PlaneControlsManager({
   params,
   getFlights: () => flights,
   getPreGeneratedConfigs: () => preGeneratedConfigs,
+  getMergedPanes: () => mergedPanes,
+  loadSvgTexture,
+  initializeFlights,
   fallbackPlaneColor: DEFAULT_PLANE_COLOR,
   parsePlaneColor: (value, fallback) => parseHexColor(value, fallback),
   syncPlaneSize: (value: number) => {
@@ -322,6 +325,15 @@ const planeControlsManager = new PlaneControlsManager({
       if (controlsManager.guiControls?.planeColor !== formatted) {
         controlsManager.setPlaneColor(value);
       }
+    }
+  },
+  syncPaneStyle: (value: string) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setPaneStyle === "function" &&
+      controlsManager.guiControls?.paneStyle !== value
+    ) {
+      controlsManager.setPaneStyle(value);
     }
   },
   syncAnimationSpeed: (value: number) => {
@@ -719,7 +731,7 @@ function setupGlobalControls(): void {
         planeControlsManager.setElevationOffset(value);
       },
       onPaneStyleChange: (value: string) => {
-        updatePaneStyle(value);
+        planeControlsManager.setPaneStyle(value);
       },
       onHidePlaneChange: (value: boolean) => {
         setHidePlane(value);
@@ -1135,34 +1147,6 @@ function updateHidePath(value: boolean): void {
 
 function updateReturnFlight(value: boolean): void {
   flightControlsManager.setReturnFlight(value);
-}
-
-function updatePaneStyle(style: string): void {
-  const nextStyle = typeof style === "string" ? style : params.paneStyle;
-  if (params.paneStyle !== nextStyle) {
-    params.paneStyle = nextStyle;
-  }
-
-  if (controlsManager && typeof controlsManager.setPaneStyle === "function") {
-    if (controlsManager.guiControls?.paneStyle !== params.paneStyle) {
-      controlsManager.setPaneStyle(params.paneStyle);
-    }
-  }
-
-  if (params.paneStyle === "SVG") {
-    loadSvgTexture()
-      .then(({ texture, info }) => {
-        if (params.paneStyle === "SVG" && mergedPanes) {
-          mergedPanes.setTexture(texture, info);
-          flights.forEach((flight) => flight.applyPaneTextureIndex?.());
-        }
-      })
-      .catch(() => {});
-  } else if (mergedPanes) {
-    mergedPanes.setTexture(null);
-  }
-
-  initializeFlights();
 }
 
 function randomizeAllFlightCurves(): void {

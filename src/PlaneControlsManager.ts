@@ -1,10 +1,15 @@
 import { Flight } from "./Flight.ts";
+import { PanesShader } from "./PanesShader.ts";
 interface PlaneControlsManagerOptions {
   params: Record<string, any>;
   getFlights: () => Flight[];
   getPreGeneratedConfigs: () => Array<Record<string, any>>;
+  getMergedPanes: () => PanesShader | null;
+  loadSvgTexture: () => Promise<{ texture: any; info: any }>;
+  initializeFlights: () => void;
   syncPlaneSize?: (value: number) => void;
   syncPlaneColor?: (value: number) => void;
+  syncPaneStyle?: (value: string) => void;
   parsePlaneColor?: (value: any, fallback: number) => number;
   fallbackPlaneColor: number;
   syncAnimationSpeed?: (value: number) => void;
@@ -15,8 +20,12 @@ export class PlaneControlsManager {
   private params: Record<string, any>;
   private getFlights: () => Flight[];
   private getPreGeneratedConfigs: () => Array<Record<string, any>>;
+  private getMergedPanes: () => PanesShader | null;
+  private loadSvgTexture: () => Promise<{ texture: any; info: any }>;
+  private initializeFlights: () => void;
   private syncPlaneSize?: (value: number) => void;
   private syncPlaneColor?: (value: number) => void;
+  private syncPaneStyle?: (value: string) => void;
   private parsePlaneColor?: (value: any, fallback: number) => number;
   private fallbackPlaneColor: number;
   private syncAnimationSpeed?: (value: number) => void;
@@ -26,8 +35,12 @@ export class PlaneControlsManager {
     this.params = options.params;
     this.getFlights = options.getFlights;
     this.getPreGeneratedConfigs = options.getPreGeneratedConfigs;
+    this.getMergedPanes = options.getMergedPanes;
+    this.loadSvgTexture = options.loadSvgTexture;
+    this.initializeFlights = options.initializeFlights;
     this.syncPlaneSize = options.syncPlaneSize;
     this.syncPlaneColor = options.syncPlaneColor;
+    this.syncPaneStyle = options.syncPaneStyle;
     this.parsePlaneColor = options.parsePlaneColor;
     this.fallbackPlaneColor = options.fallbackPlaneColor;
     this.syncAnimationSpeed = options.syncAnimationSpeed;
@@ -82,6 +95,37 @@ export class PlaneControlsManager {
     if (typeof this.syncPlaneColor === "function") {
       this.syncPlaneColor(normalized);
     }
+  }
+
+  public setPaneStyle(style: string): void {
+    const nextStyle = typeof style === "string" ? style : this.params.paneStyle;
+    if (this.params.paneStyle !== nextStyle) {
+      this.params.paneStyle = nextStyle;
+    }
+
+    if (typeof this.syncPaneStyle === "function") {
+      this.syncPaneStyle(this.params.paneStyle);
+    }
+
+    const mergedPanes = this.getMergedPanes();
+
+    if (this.params.paneStyle === "SVG") {
+      this.loadSvgTexture()
+        .then(({ texture, info }) => {
+          const latestMerged = this.getMergedPanes();
+          if (this.params.paneStyle === "SVG" && latestMerged) {
+            latestMerged.setTexture(texture, info);
+            this.getFlights().forEach((flight) =>
+              flight.applyPaneTextureIndex?.(),
+            );
+          }
+        })
+        .catch(() => {});
+    } else if (mergedPanes) {
+      mergedPanes.setTexture(null);
+    }
+
+    this.initializeFlights();
   }
 
   public setAnimationSpeed(value: number): void {
