@@ -4,7 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import Stats from "stats.js";
 import { Flight } from "./Flight.ts";
 import { Curves } from "./Curves.ts";
-import { PanesShader } from "./PanesShader.ts";
+import { PlanesShader } from "./planes/PlanesShader.ts";
 import { FlightUtils } from "./FlightUtils.ts";
 import { Stars } from "./space/Stars.ts";
 import { Earth } from "./space/Earth.ts";
@@ -14,7 +14,7 @@ import { FlightControlsManager } from "./managers/FlightControlsManager.ts";
 import { FlightPathManager } from "./managers/FlightPathManager.ts";
 import { PlaneControlsManager } from "./managers/PlaneControlsManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
-import { planes as planeDefinitions } from "./Planes.ts";
+import { planes as planeDefinitions } from "./planes/Planes.ts";
 import {
   getSunVector3,
   getCurrentUtcTimeHours,
@@ -57,7 +57,7 @@ const uiManager = new UIManager(stats);
 // Global variables
 let flights: Flight[] = [];
 let mergedCurves: Curves | null = null;
-let mergedPanes: PanesShader | null = null;
+let mergedPanes: PlanesShader | null = null;
 let stars: Stars | null = null;
 let earth: Earth | null = null;
 let initialCameraPositioned: boolean = false;
@@ -970,7 +970,7 @@ function initializeFlights(): void {
   });
 
   // Create new merged panes renderer (GPU Shader)
-  mergedPanes = new PanesShader(scene, {
+  mergedPanes = new PlanesShader(scene, {
     maxPanes: MAX_FLIGHTS,
     baseSize: params.planeSize,
     returnMode: params.returnFlight,

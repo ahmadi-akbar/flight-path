@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import vertexShader from "./shaders/panes.vert?raw";
-import fragmentShader from "./shaders/panes.frag?raw";
+import vertexShader from "../shaders/panes.vert?raw";
+import fragmentShader from "../shaders/panes.frag?raw";
 import type {
-  PanesShaderOptions,
+  PlanesShaderOptions,
   AtlasInfo,
   InternalAtlasInfo,
-} from "./types.js";
+} from "../types.js";
 
 /**
  * Tilt mode for pane orientation
@@ -13,11 +13,11 @@ import type {
 export type TiltMode = "Perpendicular" | "Tangent";
 
 /**
- * PanesShader - Ultimate performance pane renderer with GPU-side animation
+ * PlanesShader - Ultimate performance pane renderer with GPU-side animation
  * All curve calculations, transformations, and animations happen in the vertex shader.
  * CPU only updates time uniform per frame - no per-flight work on CPU!
  */
-export class PanesShader {
+export class PlanesShader {
   private scene: THREE.Scene;
   private maxPanes: number;
   private baseSize: number;
@@ -49,7 +49,7 @@ export class PanesShader {
   private returnModePreferred: boolean;
   private pendingReturnCompletion: Uint8Array;
 
-  constructor(scene: THREE.Scene, options: PanesShaderOptions = {}) {
+  constructor(scene: THREE.Scene, options: PlanesShaderOptions = {}) {
     this.scene = scene;
     this.maxPanes = options.maxPanes || 1000;
     this.baseSize = options.baseSize || 100;
@@ -198,7 +198,7 @@ export class PanesShader {
   ): void {
     if (index < 0 || index >= this.maxPanes) return;
     if (controlPoints.length < 4) {
-      console.warn("PanesShader requires 4 control points");
+      console.warn("PlanesShader requires 4 control points");
       return;
     }
 

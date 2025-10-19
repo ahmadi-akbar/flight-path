@@ -11,7 +11,7 @@ import type {
 } from "./types.js";
 
 /**
- * Flight combines a curve (from Curves) and panes (from PanesShader) into a single flight unit.
+ * Flight combines a curve (from Curves) and panes (from PlanesShader) into a single flight unit.
  * This version uses shared merged renderers for maximum performance.
  */
 export class Flight {

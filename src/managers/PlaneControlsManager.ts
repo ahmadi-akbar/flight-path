@@ -1,12 +1,12 @@
 import { Flight } from "../Flight.ts";
-import { PanesShader } from "../PanesShader.ts";
+import { PlanesShader } from "../planes/PlanesShader.ts";
 import type { PlaneControlsManagerOptions } from "../types.js";
 
 export class PlaneControlsManager {
   private params: Record<string, any>;
   private getFlights: () => Flight[];
   private getPreGeneratedConfigs: () => Array<Record<string, any>>;
-  private getMergedPanes: () => PanesShader | null;
+  private getMergedPanes: () => PlanesShader | null;
   private loadSvgTexture: () => Promise<{ texture: any; info: any }>;
   private initializeFlights: () => void;
   private syncPlaneSize?: (value: number) => void;

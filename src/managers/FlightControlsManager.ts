@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Flight } from "../Flight.ts";
 import { Curves } from "../Curves.ts";
-import { PanesShader } from "../PanesShader.ts";
+import { PlanesShader } from "../planes/PlanesShader.ts";
 import { FlightUtils } from "../FlightUtils.ts";
 import type { Flight as FlightData } from "../Data.ts";
 import type {
@@ -16,7 +16,7 @@ export class FlightControlsManager {
   private getFlights: () => Flight[];
   private getPreGeneratedConfigs: () => FlightConfig[];
   private getMergedCurves: () => Curves | null;
-  private getMergedPanes?: () => PanesShader | null;
+  private getMergedPanes?: () => PlanesShader | null;
   private ensurePlaneDefaults: (
     config?: Partial<FlightConfig>,
   ) => FlightConfig;

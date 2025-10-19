@@ -124,7 +124,7 @@ export interface MergedPanesRenderer {
   setTextureIndex?(index: number, textureIndex: number): void;
 }
 
-export interface PanesShaderOptions {
+export interface PlanesShaderOptions {
   maxPanes?: number;
   baseSize?: number;
   returnMode?: boolean;
