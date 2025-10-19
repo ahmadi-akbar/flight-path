@@ -299,6 +299,8 @@ const planeControlsManager = new PlaneControlsManager({
   params,
   getFlights: () => flights,
   getPreGeneratedConfigs: () => preGeneratedConfigs,
+  fallbackPlaneColor: DEFAULT_PLANE_COLOR,
+  parsePlaneColor: (value, fallback) => parseHexColor(value, fallback),
   syncPlaneSize: (value: number) => {
     if (
       controlsManager &&
@@ -306,6 +308,17 @@ const planeControlsManager = new PlaneControlsManager({
       controlsManager.guiControls?.planeSize !== value
     ) {
       controlsManager.setPlaneSize(value);
+    }
+  },
+  syncPlaneColor: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setPlaneColor === "function"
+    ) {
+      const formatted = `#${value.toString(16).padStart(6, "0")}`;
+      if (controlsManager.guiControls?.planeColor !== formatted) {
+        controlsManager.setPlaneColor(value);
+      }
     }
   },
 });
@@ -1145,36 +1158,7 @@ function updatePlaneElevation(value: number): void {
 
 // Function to update plane color
 function updatePlaneColor(color: any): void {
-  let inputColor = color;
-  if (color && typeof color === "object") {
-    const clamp = (component: any) => {
-      const numeric = Number(component);
-      if (!Number.isFinite(numeric)) return 0;
-      return Math.max(0, Math.min(255, Math.round(numeric)));
-    };
-    const r = clamp(color.r ?? color.red);
-    const g = clamp(color.g ?? color.green);
-    const b = clamp(color.b ?? color.blue);
-    inputColor = (r << 16) | (g << 8) | b;
-  }
-
-  const normalizedColor = parseHexColor(inputColor, DEFAULT_PLANE_COLOR);
-  params.planeColor = normalizedColor;
-
-  preGeneratedConfigs = preGeneratedConfigs.map((config, index) => {
-    const updatedConfig = { ...config, paneColor: normalizedColor };
-    if (index < flights.length) {
-      flights[index].setPaneColor(normalizedColor);
-    }
-    return updatedConfig;
-  });
-
-  if (controlsManager && typeof controlsManager.setPlaneColor === "function") {
-    const formatted = `#${normalizedColor.toString(16).padStart(6, "0")}`;
-    if (controlsManager.guiControls?.planeColor !== formatted) {
-      controlsManager.setPlaneColor(normalizedColor);
-    }
-  }
+  planeControlsManager.setPlaneColor(color);
 }
 
 function updateDashSize(size: number): void {
