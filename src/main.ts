@@ -659,13 +659,9 @@ function setupGlobalControls(): void {
       },
       onRealTimeSunChange: (value: boolean) => {
         if (value) {
-          const currentUtc = getCurrentUtcTimeHours();
-          guiControls.simulatedTime = currentUtc;
-          guiControls.timeDisplay = hoursToTimeString(currentUtc);
-          const { timeDisplay, timeSlider } =
-            controlsManager!.controllers || {};
-          if (timeDisplay) timeDisplay.updateDisplay();
-          if (timeSlider) timeSlider.updateDisplay();
+          earthControlsManager?.enableRealTimeSun();
+        } else {
+          earthControlsManager?.disableRealTimeSun();
         }
       },
       onTimeSliderChange: (value: number) => {
@@ -674,7 +670,7 @@ function setupGlobalControls(): void {
         const { timeDisplay, realTimeSun } = controlsManager!.controllers || {};
         if (timeDisplay) timeDisplay.updateDisplay();
         if (guiControls.realTimeSun) {
-          guiControls.realTimeSun = false;
+          earthControlsManager?.disableRealTimeSun();
           if (realTimeSun) realTimeSun.updateDisplay();
         }
       },
@@ -748,6 +744,9 @@ function setupGlobalControls(): void {
   if (earthControlsManager) {
     earthControlsManager.setDayBrightness(guiControls.dayBrightness);
     earthControlsManager.setNightBrightness(guiControls.nightBrightness);
+    if (guiControls.realTimeSun) {
+      earthControlsManager.enableRealTimeSun();
+    }
   }
 
   earthControlsManager?.toggleAtmosphereEffect(guiControls.atmosphereEffect);
@@ -1201,6 +1200,8 @@ earthControlsManager = new EarthControlsManager({
   getGuiControls: () => guiControls,
   updateLighting,
   getEarth: () => earth,
+  getCurrentUtcTimeHours,
+  hoursToTimeString,
 });
 
 setupGlobalControls();

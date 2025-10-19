@@ -7,6 +7,8 @@ interface EarthControlsOptions {
   getGuiControls: () => any;
   updateLighting: () => void;
   getEarth: () => Earth | null;
+  getCurrentUtcTimeHours: () => number;
+  hoursToTimeString: (hours: number) => string;
 }
 
 export class EarthControlsManager {
@@ -15,6 +17,8 @@ export class EarthControlsManager {
   private getGuiControls: () => any;
   private updateLighting: () => void;
   private getEarth: () => Earth | null;
+  private getCurrentUtcTimeHours: () => number;
+  private hoursToTimeString: (hours: number) => string;
   private baseAmbientColor: THREE.Color | null;
   private baseAmbientIntensity: number;
   private baseDirectionalIntensity: number;
@@ -29,6 +33,8 @@ export class EarthControlsManager {
     this.getGuiControls = options.getGuiControls;
     this.updateLighting = options.updateLighting;
     this.getEarth = options.getEarth;
+    this.getCurrentUtcTimeHours = options.getCurrentUtcTimeHours;
+    this.hoursToTimeString = options.hoursToTimeString;
 
     this.baseAmbientColor = this.ambientLight.color.clone();
     this.baseAmbientIntensity = this.ambientLight.intensity;
@@ -113,6 +119,23 @@ export class EarthControlsManager {
     }
 
     this.updateLighting();
+  }
+
+  public enableRealTimeSun(): void {
+    const guiControls = this.getGuiControls();
+    const currentUtc = this.getCurrentUtcTimeHours();
+    if (guiControls) {
+      guiControls.realTimeSun = true;
+      guiControls.simulatedTime = currentUtc;
+      guiControls.timeDisplay = this.hoursToTimeString(currentUtc);
+    }
+  }
+
+  public disableRealTimeSun(): void {
+    const guiControls = this.getGuiControls();
+    if (guiControls) {
+      guiControls.realTimeSun = false;
+    }
   }
 
   private clampBrightness(value: any, fallback: number): number {
