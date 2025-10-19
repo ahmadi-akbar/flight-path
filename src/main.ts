@@ -22,63 +22,13 @@ import {
   hoursToTimeString,
 } from "./Utils.ts";
 import { UIManager } from "./UIManager.ts";
-
-// TypeScript interfaces
-interface PlaneEntry {
-  name: string;
-  svg: string;
-  color: string;
-  atlasIndex: number;
-}
-
-interface FlightConfig {
-  controlPoints: THREE.Vector3[];
-  segmentCount: number;
-  curveColor?: any;
-  paneCount?: number;
-  paneSize: number;
-  elevationOffset: number;
-  animationSpeed: number;
-  tiltMode: string;
-  returnFlight: boolean;
-  flightData?: FlightData | null;
-  paneColor?: number;
-  paneTextureIndex?: number;
-  planeInfo?: PlaneEntry | null;
-  _randomSpeed?: number;
-}
-
-interface SvgAtlasInfo {
-  columns: number;
-  rows: number;
-  count: number;
-  scale: { x: number; y: number };
-}
-
-interface PerfStats {
-  flightUpdates: number;
-  mergedUpdates: number;
-  controlsUpdate: number;
-  render: number;
-  total: number;
-}
-
-interface GuiParams {
-  numFlights: number;
-  elevationOffset: number;
-  segmentCount: number;
-  planeSize: number;
-  planeColor: number;
-  animationSpeed: number;
-  tiltMode: string;
-  paneStyle: string;
-  dashSize: number;
-  gapSize: number;
-  hidePath: boolean;
-  hidePlane: boolean;
-  randomSpeed: boolean;
-  returnFlight: boolean;
-}
+import type {
+  PlaneEntry,
+  FlightConfig,
+  SvgAtlasInfo,
+  PerfStats,
+  GuiParams,
+} from "./types.js";
 
 // Scene setup
 const scene = new THREE.Scene();

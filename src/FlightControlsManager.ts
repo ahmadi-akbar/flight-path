@@ -4,52 +4,11 @@ import { Curves } from "./Curves.ts";
 import { PanesShader } from "./PanesShader.ts";
 import { FlightUtils } from "./FlightUtils.ts";
 import type { Flight as FlightData } from "./Data.ts";
-
-interface FlightConfig {
-  controlPoints: THREE.Vector3[];
-  segmentCount: number;
-  curveColor?: any;
-  paneCount?: number;
-  paneSize: number;
-  elevationOffset?: number;
-  animationSpeed?: number;
-  tiltMode?: string;
-  returnFlight: boolean;
-  flightData?: FlightData | null;
-  paneColor?: number;
-  paneTextureIndex?: number;
-  planeInfo?: any;
-  _randomSpeed?: number;
-}
-
-interface FlightParams {
-  numFlights: number;
-  segmentCount: number;
-  planeSize: number;
-  planeColor: number;
-  animationSpeed: number;
-  elevationOffset: number;
-  returnFlight: boolean;
-  randomSpeed: boolean;
-}
-
-interface FlightControlsManagerOptions {
-  params: FlightParams;
-  maxFlights: number;
-  getFlights: () => Flight[];
-  getPreGeneratedConfigs: () => FlightConfig[];
-  getMergedCurves: () => Curves | null;
-  getMergedPanes?: () => PanesShader | null;
-  ensurePlaneDefaults: (config?: Partial<FlightConfig>) => FlightConfig;
-  assignRandomPlane: (config?: Partial<FlightConfig>) => FlightConfig;
-  resolvePaneColor: (config?: Partial<FlightConfig>) => number;
-  resolveAnimationSpeed: (config?: Partial<FlightConfig>) => number;
-  createFlightFromConfig: (config: FlightConfig, index: number) => Flight;
-  updatePathVisibility: () => void;
-  updatePlaneVisibility: () => void;
-  syncFlightCount?: (value: number) => void;
-  syncReturnFlight?: (value: boolean) => void;
-}
+import type {
+  FlightConfig,
+  FlightParams,
+  FlightControlsManagerOptions,
+} from "./types.js";
 
 export class FlightControlsManager {
   private params: FlightParams;

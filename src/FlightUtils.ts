@@ -1,74 +1,14 @@
 import * as THREE from "three";
 import type { Geolocation } from "./Data.ts";
 import { latLngToVector3 } from "./Utils.ts";
-
-/**
- * Interface for bounding box configuration
- */
-interface Bounds {
-  minX?: number;
-  maxX?: number;
-  minY?: number;
-  maxY?: number;
-  minZ?: number;
-  maxZ?: number;
-}
-
-/**
- * Interface for random curve generation options
- */
-interface RandomCurveOptions {
-  start?: THREE.Vector3;
-  end?: THREE.Vector3;
-  numControlPoints?: number;
-  spread?: number;
-  radius?: number;
-  center?: THREE.Vector3;
-  bounds?: Bounds;
-}
-
-/**
- * Interface for color generation options
- */
-interface ColorOptions {
-  saturation?: number;
-  lightness?: number;
-}
-
-/**
- * Interface for flight configuration options
- */
-interface FlightConfigOptions extends RandomCurveOptions {
-  segmentCount?: number;
-  curveColor?: number;
-  paneCount?: number;
-  paneSize?: number;
-  paneColor?: number;
-  animationSpeed?: number;
-  tiltMode?: string;
-  returnFlight?: boolean;
-}
-
-/**
- * Interface for generated flight configuration
- */
-export interface FlightConfig {
-  controlPoints: THREE.Vector3[];
-  segmentCount: number;
-  curveColor: number;
-  paneCount: number;
-  paneSize: number;
-  paneColor: number;
-  animationSpeed: number;
-  tiltMode: string;
-  returnFlight: boolean;
-}
-
-export interface GradientColorConfig {
-  type: "gradient";
-  departureLat?: number;
-  departureLng?: number;
-}
+import type {
+  Bounds,
+  RandomCurveOptions,
+  ColorOptions,
+  FlightConfigOptions,
+  FlightConfig,
+  GradientColorConfig,
+} from "./types.js";
 
 /**
  * Utility functions for generating flight paths and control points

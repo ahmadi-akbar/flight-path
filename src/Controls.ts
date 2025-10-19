@@ -4,159 +4,19 @@ import {
   hoursToTimeString,
   timeStringToHours,
 } from "./Utils.js";
-
-// Type definitions for dat.GUI
-interface GUIFolder {
-  add(
-    object: any,
-    property: string,
-    min?: number,
-    max?: number,
-    step?: number,
-  ): GUIController;
-  add(
-    object: any,
-    property: string,
-    options?: string[] | { [key: string]: any },
-  ): GUIController;
-  addColor(object: any, property: string): GUIController;
-  addFolder(name: string): GUIFolder;
-  open(): GUIFolder;
-  close(): GUIFolder;
-}
-
-interface GUIController {
-  name(name: string): GUIController;
-  onChange(callback: (value: any) => void): GUIController;
-  step(step: number): GUIController;
-  updateDisplay(): GUIController;
-  __input?: HTMLInputElement;
-}
-
-// Interface for color object format
-interface ColorObject {
-  r?: number;
-  g?: number;
-  b?: number;
-  red?: number;
-  green?: number;
-  blue?: number;
-}
-
-// Interface for range configuration
-interface RangeConfig {
-  min?: number;
-  max?: number;
-  step?: number;
-}
-
-// Interface for flight controls configuration
-interface FlightControlsConfig {
-  flightCountRange?: RangeConfig;
-}
-
-// Interface for flight path controls configuration
-interface FlightPathControlsConfig {
-  dashRange?: RangeConfig;
-  gapRange?: RangeConfig;
-}
-
-// Interface for plane controls configuration
-interface PlaneControlsConfig {
-  sizeRange?: RangeConfig;
-  speedRange?: RangeConfig;
-  elevationRange?: RangeConfig;
-  paneStyleOptions?: string[];
-}
-
-// Interface for general configuration options
-interface ControlsOptions {
-  planeSize?: number;
-  planeColor?: string | number | ColorObject;
-  animationSpeed?: number;
-  elevationOffset?: number;
-  paneStyle?: string;
-  hidePlane?: boolean;
-  dashSize?: number;
-  gapSize?: number;
-  hidePath?: boolean;
-  numFlights?: number;
-  returnFlight?: boolean;
-  planeSizeRange?: RangeConfig;
-  speedRange?: RangeConfig;
-  elevationRange?: RangeConfig;
-  paneStyleOptions?: string[];
-  flightCountRange?: RangeConfig;
-  dashRange?: RangeConfig;
-  gapRange?: RangeConfig;
-}
-
-// Interface for GUI controls state
-interface GuiControls {
-  dayNightEffect: boolean;
-  atmosphereEffect: boolean;
-  realTimeSun: boolean;
-  simulatedTime: number;
-  timeDisplay: string;
-  nightBrightness: number;
-  dayBrightness: number;
-  planeSize: number;
-  planeColor: string;
-  animationSpeed: number;
-  elevationOffset: number;
-  paneStyle: string;
-  hidePlane: boolean;
-  dashSize: number;
-  gapSize: number;
-  hidePath: boolean;
-  numFlights: number;
-  returnFlight: boolean;
-}
-
-// Interface for callback functions
-interface ControlsCallbacks {
-  onDayNightEffectChange?: (value: boolean) => void;
-  onAtmosphereEffectChange?: (value: boolean) => void;
-  onResetSunPosition?: () => void;
-  onRealTimeSunChange?: (value: boolean) => void;
-  onTimeDisplayChange?: (value: string) => void;
-  onTimeSliderChange?: (value: number) => void;
-  onDayBrightnessChange?: (value: number) => void;
-  onNightBrightnessChange?: (value: number) => void;
-  onFlightCountChange?: (value: number) => void;
-  onReturnFlightChange?: (value: boolean) => void;
-  onDashSizeChange?: (value: number) => void;
-  onGapSizeChange?: (value: number) => void;
-  onHidePathChange?: (value: boolean) => void;
-  onPlaneSizeChange?: (value: number) => void;
-  onPlaneColorChange?: (value: string) => void;
-  onAnimationSpeedChange?: (value: number) => void;
-  onPlaneElevationChange?: (value: number) => void;
-  onPaneStyleChange?: (value: string) => void;
-  onHidePlaneChange?: (value: boolean) => void;
-}
-
-// Known controller keys for strong typing while supporting dynamic keys
-type KnownControllerKey =
-  | "realTimeSun"
-  | "timeDisplay"
-  | "timeSlider"
-  | "numFlights"
-  | "returnFlight"
-  | "dashSize"
-  | "gapSize"
-  | "hidePath"
-  | "planeSize"
-  | "planeColor"
-  | "animationSpeed"
-  | "elevationOffset"
-  | "paneStyle"
-  | "hidePlane";
-
-// Interface for controllers storage
-type Controllers = Partial<Record<KnownControllerKey, GUIController>> & {
-  [key: string]: GUIController | undefined;
-};
+import type {
+  GUIFolder,
+  ColorObject,
+  RangeConfig,
+  FlightControlsConfig,
+  FlightPathControlsConfig,
+  PlaneControlsConfig,
+  ControlsOptions,
+  GuiControls,
+  ControlsCallbacks,
+  KnownControllerKey,
+  Controllers,
+} from "./types.js";
 
 /**
  * Controls class manages all GUI controls and their interactions

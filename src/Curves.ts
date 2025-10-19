@@ -1,40 +1,11 @@
 import * as THREE from "three";
-
-// Interface definitions for TypeScript
-interface CurvesOptions {
-  maxCurves?: number;
-  segmentsPerCurve?: number;
-  dashSize?: number;
-  gapSize?: number;
-}
-
-interface CurveData {
-  controlPoints: THREE.Vector3[];
-  color: number | THREE.Color | GradientColorConfig;
-  visible: boolean;
-  metadata: CurveMetadata | null;
-}
-
-interface GradientColorConfig {
-  type: "gradient";
-  departureLat?: number;
-  departureLng?: number;
-}
-
-interface CurveMetadata {
-  departure?: {
-    lat: number;
-    lng: number;
-  };
-  [key: string]: any;
-}
-
-interface GradientParams {
-  hue: number;
-  saturation: number;
-  lightnessStart: number;
-  lightnessEnd: number;
-}
+import type {
+  CurvesOptions,
+  CurveData,
+  GradientColorConfig,
+  CurveMetadata,
+  GradientParams,
+} from "./types.js";
 
 /**
  * Curves - Ultra-high performance curve renderer

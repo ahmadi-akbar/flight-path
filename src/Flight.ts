@@ -1,98 +1,14 @@
 import * as THREE from "three";
-
-// Type definitions for flight data
-interface FlightData {
-  departure?: {
-    coordinates: [number, number];
-    [key: string]: any;
-  };
-  arrival?: {
-    coordinates: [number, number];
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
-
-// Interface for merged curves renderer
-interface MergedCurvesRenderer {
-  setCurve(
-    index: number,
-    controlPoints: THREE.Vector3[],
-    color: number,
-    flightData?: FlightData | null,
-  ): void;
-  setCurveColor(
-    index: number,
-    color: number,
-    flightData?: FlightData | null,
-  ): void;
-  hideCurve(index: number): void;
-}
-
-// Interface for merged panes renderer
-interface MergedPanesRenderer {
-  setPaneColor(index: number, color: number): void;
-  setPaneSize(index: number, size: number): void;
-  hidePane(index: number): void;
-  setScale?(index: number, scale: number): void;
-  setElevationOffset?(index: number, offset: number): void;
-  updatePaneOnCurve?(
-    index: number,
-    curve: THREE.CatmullRomCurve3,
-    t: number,
-    epsilon: number,
-    tiltMode: string,
-  ): void;
-
-  // Shader-based panes methods
-  setCurveControlPoints?(index: number, points: THREE.Vector3[]): void;
-  setAnimationSpeed?(index: number, speed: number): void;
-  setTiltMode?(index: number, mode: string): void;
-  setTextureIndex?(index: number, textureIndex: number): void;
-}
-
-// Interface for curve options
-interface CurveOptions {
-  segmentCount: number;
-  color: number;
-}
-
-// Interface for pane options
-interface PaneOptions {
-  count: number;
-  paneSize: number;
-  color: number;
-  elevationOffset: number;
-  textureIndex: number;
-}
-
-// Type for tilt modes
-type TiltMode = "Perpendicular" | "Horizontal" | "Vertical" | string;
-
-// Interface for Flight constructor options
-interface FlightOptions {
-  mergedCurves?: MergedCurvesRenderer | null;
-  curveIndex?: number;
-  mergedPanes?: MergedPanesRenderer | null;
-  paneIndex?: number;
-  controlPoints?: THREE.Vector3[];
-  segmentCount?: number;
-  curveColor?: number;
-  paneCount?: number;
-  paneSize?: number;
-  paneColor?: number;
-  elevationOffset?: number;
-  paneTextureIndex?: number;
-  animationSpeed?: number;
-  tiltMode?: TiltMode;
-  returnFlight?: boolean;
-  flightData?: FlightData | null;
-}
-
-// Interface for animation speed options
-interface AnimationSpeedOptions {
-  immediate?: boolean;
-}
+import type {
+  FlightData,
+  MergedCurvesRenderer,
+  MergedPanesRenderer,
+  CurveOptions,
+  PaneOptions,
+  TiltMode,
+  FlightOptions,
+  AnimationSpeedOptions,
+} from "./types.js";
 
 /**
  * Flight combines a curve (from Curves) and panes (from PanesShader) into a single flight unit.

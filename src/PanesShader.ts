@@ -1,40 +1,11 @@
 import * as THREE from "three";
 import vertexShader from "./shaders/panes.vert?raw";
 import fragmentShader from "./shaders/panes.frag?raw";
-
-/**
- * Options for configuring the PanesShader
- */
-export interface PanesShaderOptions {
-  maxPanes?: number;
-  baseSize?: number;
-  returnMode?: boolean;
-  baseElevation?: number;
-}
-
-/**
- * Atlas information for texture management
- */
-export interface AtlasInfo {
-  columns: number;
-  rows: number;
-  count: number;
-  scale?: {
-    x: number;
-    y: number;
-  };
-}
-
-/**
- * Internal atlas info with required scale properties
- */
-interface InternalAtlasInfo {
-  columns: number;
-  rows: number;
-  count: number;
-  scaleX: number;
-  scaleY: number;
-}
+import type {
+  PanesShaderOptions,
+  AtlasInfo,
+  InternalAtlasInfo,
+} from "./types.js";
 
 /**
  * Tilt mode for pane orientation

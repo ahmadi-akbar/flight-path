@@ -1,15 +1,6 @@
 import * as THREE from "three";
 import type { Earth } from "./Earth.ts";
-
-interface EarthControlsOptions {
-  ambientLight: THREE.AmbientLight;
-  directionalLight: THREE.DirectionalLight;
-  getGuiControls: () => any;
-  updateLighting: () => void;
-  getEarth: () => Earth | null;
-  getCurrentUtcTimeHours: () => number;
-  hoursToTimeString: (hours: number) => string;
-}
+import type { EarthControlsOptions } from "./types.js";
 
 export class EarthControlsManager {
   private ambientLight: THREE.AmbientLight;

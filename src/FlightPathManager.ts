@@ -1,18 +1,8 @@
 import { Curves } from "./Curves.ts";
-
-interface FlightPathParams {
-  dashSize: number;
-  gapSize: number;
-}
-
-interface FlightPathManagerOptions {
-  params: FlightPathParams;
-  getMergedCurves: () => Curves | null;
-  getFlightCount: () => number;
-  syncDashSize?: (value: number) => void;
-  syncGapSize?: (value: number) => void;
-  syncHidePath?: (value: boolean) => void;
-}
+import type {
+  FlightPathParams,
+  FlightPathManagerOptions,
+} from "./types.js";
 
 export class FlightPathManager {
   private params: FlightPathParams;
