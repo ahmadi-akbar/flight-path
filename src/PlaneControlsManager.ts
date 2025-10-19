@@ -8,6 +8,7 @@ interface PlaneControlsManagerOptions {
   parsePlaneColor?: (value: any, fallback: number) => number;
   fallbackPlaneColor: number;
   syncAnimationSpeed?: (value: number) => void;
+  syncElevationOffset?: (value: number) => void;
 }
 
 export class PlaneControlsManager {
@@ -19,6 +20,7 @@ export class PlaneControlsManager {
   private parsePlaneColor?: (value: any, fallback: number) => number;
   private fallbackPlaneColor: number;
   private syncAnimationSpeed?: (value: number) => void;
+  private syncElevationOffset?: (value: number) => void;
 
   constructor(options: PlaneControlsManagerOptions) {
     this.params = options.params;
@@ -29,6 +31,7 @@ export class PlaneControlsManager {
     this.parsePlaneColor = options.parsePlaneColor;
     this.fallbackPlaneColor = options.fallbackPlaneColor;
     this.syncAnimationSpeed = options.syncAnimationSpeed;
+    this.syncElevationOffset = options.syncElevationOffset;
   }
 
   public setPlaneSize(value: number): void {
@@ -94,6 +97,35 @@ export class PlaneControlsManager {
 
     if (typeof this.syncAnimationSpeed === "function") {
       this.syncAnimationSpeed(speed);
+    }
+  }
+
+  public setElevationOffset(value: number): void {
+    const numeric = Number(value);
+    const offset = Number.isFinite(numeric) ? numeric : this.params.elevationOffset;
+
+    if (this.params.elevationOffset === offset) {
+      return;
+    }
+
+    this.params.elevationOffset = offset;
+
+    const flights = this.getFlights();
+    const configs = this.getPreGeneratedConfigs();
+
+    flights.forEach((flight) => {
+      flight.setPaneElevation(offset);
+    });
+
+    for (let i = 0; i < configs.length; i++) {
+      const config = configs[i];
+      if (config) {
+        configs[i] = { ...config, elevationOffset: offset };
+      }
+    }
+
+    if (typeof this.syncElevationOffset === "function") {
+      this.syncElevationOffset(offset);
     }
   }
 

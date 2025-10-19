@@ -333,6 +333,15 @@ const planeControlsManager = new PlaneControlsManager({
       controlsManager.setAnimationSpeed(value);
     }
   },
+  syncElevationOffset: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setPlaneElevation === "function" &&
+      controlsManager.guiControls?.elevationOffset !== value
+    ) {
+      controlsManager.setPlaneElevation(value);
+    }
+  },
 });
 
 function clonePlaneEntry(entry: PlaneEntry | null): PlaneEntry | null {
@@ -707,7 +716,7 @@ function setupGlobalControls(): void {
         planeControlsManager.setAnimationSpeed(value);
       },
       onPlaneElevationChange: (value: number) => {
-        updatePlaneElevation(value);
+        planeControlsManager.setElevationOffset(value);
       },
       onPaneStyleChange: (value: string) => {
         updatePaneStyle(value);
@@ -1105,27 +1114,6 @@ function updateSegmentCount(count: number): void {
 // Function to update plane size
 function updatePlaneSize(size: number): void {
   planeControlsManager.setPlaneSize(size);
-}
-
-// Function to update plane elevation offset
-function updatePlaneElevation(value: number): void {
-  params.elevationOffset = value;
-  preGeneratedConfigs = preGeneratedConfigs.map((config, index) => {
-    const updatedConfig = { ...config, elevationOffset: value };
-    if (index < flights.length) {
-      flights[index].setPaneElevation(value);
-    }
-    return updatedConfig;
-  });
-
-  if (
-    controlsManager &&
-    typeof controlsManager.setPlaneElevation === "function"
-  ) {
-    if (controlsManager.guiControls?.elevationOffset !== value) {
-      controlsManager.setPlaneElevation(value);
-    }
-  }
 }
 
 // Function to update plane color
