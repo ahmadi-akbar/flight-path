@@ -1,14 +1,14 @@
 import * as THREE from "three";
-import { Flight } from "./Flight.ts";
-import { Curves } from "./Curves.ts";
-import { PanesShader } from "./PanesShader.ts";
-import { FlightUtils } from "./FlightUtils.ts";
-import type { Flight as FlightData } from "./Data.ts";
+import { Flight } from "../Flight.ts";
+import { Curves } from "../Curves.ts";
+import { PanesShader } from "../PanesShader.ts";
+import { FlightUtils } from "../FlightUtils.ts";
+import type { Flight as FlightData } from "../Data.ts";
 import type {
   FlightConfig,
   FlightParams,
   FlightControlsManagerOptions,
-} from "./types.js";
+} from "../types.js";
 
 export class FlightControlsManager {
   private params: FlightParams;

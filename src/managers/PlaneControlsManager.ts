@@ -1,6 +1,6 @@
-import { Flight } from "./Flight.ts";
-import { PanesShader } from "./PanesShader.ts";
-import type { PlaneControlsManagerOptions } from "./types.js";
+import { Flight } from "../Flight.ts";
+import { PanesShader } from "../PanesShader.ts";
+import type { PlaneControlsManagerOptions } from "../types.js";
 
 export class PlaneControlsManager {
   private params: Record<string, any>;

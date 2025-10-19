@@ -1,8 +1,8 @@
-import { Curves } from "./Curves.ts";
+import { Curves } from "../Curves.ts";
 import type {
   FlightPathParams,
   FlightPathManagerOptions,
-} from "./types.js";
+} from "../types.js";
 
 export class FlightPathManager {
   private params: FlightPathParams;

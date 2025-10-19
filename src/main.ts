@@ -9,10 +9,10 @@ import { FlightUtils } from "./FlightUtils.ts";
 import { Stars } from "./Stars.ts";
 import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
-import { EarthControlsManager } from "./EarthControlsManager.ts";
-import { FlightControlsManager } from "./FlightControlsManager.ts";
-import { FlightPathManager } from "./FlightPathManager.ts";
-import { PlaneControlsManager } from "./PlaneControlsManager.ts";
+import { EarthControlsManager } from "./managers/EarthControlsManager.ts";
+import { FlightControlsManager } from "./managers/FlightControlsManager.ts";
+import { FlightPathManager } from "./managers/FlightPathManager.ts";
+import { PlaneControlsManager } from "./managers/PlaneControlsManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
 import { planes as planeDefinitions } from "./Planes.ts";
 import {
@@ -21,7 +21,7 @@ import {
   animateCameraToPosition,
   hoursToTimeString,
 } from "./Utils.ts";
-import { UIManager } from "./UIManager.ts";
+import { UIManager } from "./managers/UIManager.ts";
 import type {
   PlaneEntry,
   FlightConfig,

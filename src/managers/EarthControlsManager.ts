@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { Earth } from "./Earth.ts";
-import type { EarthControlsOptions } from "./types.js";
+import type { Earth } from "../Earth.ts";
+import type { EarthControlsOptions } from "../types.js";
 
 export class EarthControlsManager {
   private ambientLight: THREE.AmbientLight;
