@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import Stats from "stats.js";
 import { Flight } from "./flights/Flight.ts";
-import { Curves } from "./Curves.ts";
+import { Curves } from "./curves/Curves.ts";
 import { PlanesShader } from "./planes/PlanesShader.ts";
 import { FlightUtils } from "./flights/FlightUtils.ts";
 import { Stars } from "./space/Stars.ts";

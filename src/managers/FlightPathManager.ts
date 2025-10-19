@@ -1,4 +1,4 @@
-import { Curves } from "../Curves.ts";
+import { Curves } from "../curves/Curves.ts";
 import type {
   FlightPathParams,
   FlightPathManagerOptions,

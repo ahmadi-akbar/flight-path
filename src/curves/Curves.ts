@@ -5,7 +5,7 @@ import type {
   GradientColorConfig,
   CurveMetadata,
   GradientParams,
-} from "./types.js";
+} from "../types.js";
 
 /**
  * Curves - Ultra-high performance curve renderer
