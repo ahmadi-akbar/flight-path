@@ -606,10 +606,15 @@ function updateLighting(): void {
     return;
   }
 
-  const dayIntensity = resolveDayIntensityFromPercent(
-    guiControls.dayBrightness,
-  );
-  const nightMix = resolveNightMixFromPercent(guiControls.nightBrightness);
+  const dayPercent = earthControlsManager
+    ? earthControlsManager.getDayBrightnessPercent()
+    : guiControls.dayBrightness ?? DEFAULT_DAY_BRIGHTNESS_PERCENT;
+  const nightPercent = earthControlsManager
+    ? earthControlsManager.getNightBrightnessPercent()
+    : guiControls.nightBrightness ?? DEFAULT_NIGHT_BRIGHTNESS_PERCENT;
+
+  const dayIntensity = resolveDayIntensityFromPercent(dayPercent);
+  const nightMix = resolveNightMixFromPercent(nightPercent);
 
   directionalLight.intensity = dayIntensity;
 
@@ -646,8 +651,12 @@ function setupGlobalControls(): void {
         directionalLight.position.set(0, 1000, 1000);
         updateSunPosition();
       },
-      onDayBrightnessChange: updateLighting,
-      onNightBrightnessChange: updateLighting,
+      onDayBrightnessChange: (value: number) => {
+        earthControlsManager?.setDayBrightness(value);
+      },
+      onNightBrightnessChange: (value: number) => {
+        earthControlsManager?.setNightBrightness(value);
+      },
       onRealTimeSunChange: (value: boolean) => {
         if (value) {
           const currentUtc = getCurrentUtcTimeHours();
@@ -735,6 +744,11 @@ function setupGlobalControls(): void {
   document.querySelectorAll(".dg.ac").forEach((container) => {
     (container as HTMLElement).style.display = "none";
   });
+
+  if (earthControlsManager) {
+    earthControlsManager.setDayBrightness(guiControls.dayBrightness);
+    earthControlsManager.setNightBrightness(guiControls.nightBrightness);
+  }
 
   earthControlsManager?.toggleAtmosphereEffect(guiControls.atmosphereEffect);
   earthControlsManager?.toggleDayNightEffect(guiControls.dayNightEffect);

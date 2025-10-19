@@ -18,6 +18,10 @@ export class EarthControlsManager {
   private baseAmbientColor: THREE.Color | null;
   private baseAmbientIntensity: number;
   private baseDirectionalIntensity: number;
+  private dayBrightnessPercent: number;
+  private nightBrightnessPercent: number;
+  private readonly DEFAULT_DAY_PERCENT = 70;
+  private readonly DEFAULT_NIGHT_PERCENT = 40;
 
   constructor(options: EarthControlsOptions) {
     this.ambientLight = options.ambientLight;
@@ -29,6 +33,8 @@ export class EarthControlsManager {
     this.baseAmbientColor = this.ambientLight.color.clone();
     this.baseAmbientIntensity = this.ambientLight.intensity;
     this.baseDirectionalIntensity = this.directionalLight.intensity;
+    this.dayBrightnessPercent = this.DEFAULT_DAY_PERCENT;
+    this.nightBrightnessPercent = this.DEFAULT_NIGHT_PERCENT;
   }
 
   public toggleDayNightEffect(enabled: boolean): void {
@@ -69,5 +75,51 @@ export class EarthControlsManager {
 
   public getBaseAmbientIntensity(): number {
     return this.baseAmbientIntensity;
+  }
+
+  public getDayBrightnessPercent(): number {
+    return this.dayBrightnessPercent;
+  }
+
+  public getNightBrightnessPercent(): number {
+    return this.nightBrightnessPercent;
+  }
+
+  public setDayBrightness(percent: number): void {
+    const clamped = this.clampBrightness(percent, this.DEFAULT_DAY_PERCENT);
+    if (this.dayBrightnessPercent === clamped) {
+      return;
+    }
+    this.dayBrightnessPercent = clamped;
+
+    const guiControls = this.getGuiControls();
+    if (guiControls && guiControls.dayBrightness !== clamped) {
+      guiControls.dayBrightness = clamped;
+    }
+
+    this.updateLighting();
+  }
+
+  public setNightBrightness(percent: number): void {
+    const clamped = this.clampBrightness(percent, this.DEFAULT_NIGHT_PERCENT);
+    if (this.nightBrightnessPercent === clamped) {
+      return;
+    }
+    this.nightBrightnessPercent = clamped;
+
+    const guiControls = this.getGuiControls();
+    if (guiControls && guiControls.nightBrightness !== clamped) {
+      guiControls.nightBrightness = clamped;
+    }
+
+    this.updateLighting();
+  }
+
+  private clampBrightness(value: any, fallback: number): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+    return THREE.MathUtils.clamp(numeric, 0, 100);
   }
 }
