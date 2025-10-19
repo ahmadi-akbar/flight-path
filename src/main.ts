@@ -663,19 +663,25 @@ function setupGlobalControls(): void {
         } else {
           earthControlsManager?.disableRealTimeSun();
         }
+        const { timeDisplay, timeSlider, realTimeSun } =
+          controlsManager!.controllers || {};
+        if (timeDisplay) timeDisplay.updateDisplay();
+        if (timeSlider) timeSlider.updateDisplay();
+        if (realTimeSun) realTimeSun.updateDisplay();
       },
       onTimeSliderChange: (value: number) => {
-        guiControls.simulatedTime = value;
-        guiControls.timeDisplay = hoursToTimeString(value);
+        earthControlsManager?.setSimulatedTime(value);
         const { timeDisplay, realTimeSun } = controlsManager!.controllers || {};
         if (timeDisplay) timeDisplay.updateDisplay();
-        if (guiControls.realTimeSun) {
-          earthControlsManager?.disableRealTimeSun();
-          if (realTimeSun) realTimeSun.updateDisplay();
-        }
+        if (realTimeSun) realTimeSun.updateDisplay();
       },
       onTimeDisplayChange: (value: string) => {
-        guiControls.timeDisplay = value;
+        if (earthControlsManager?.setTimeDisplay(value)) {
+          const { timeSlider, realTimeSun } =
+            controlsManager!.controllers || {};
+          if (timeSlider) timeSlider.updateDisplay();
+          if (realTimeSun) realTimeSun.updateDisplay();
+        }
       },
       onPlaneSizeChange: (value: number) => {
         updatePlaneSize(value);
@@ -735,6 +741,7 @@ function setupGlobalControls(): void {
   );
 
   guiControls = controlsManager.getControls();
+  earthControlsManager?.initializeFromGui(guiControls);
   window.guiControlsInstance = controlsManager;
 
   document.querySelectorAll(".dg.ac").forEach((container) => {
@@ -758,29 +765,27 @@ function updateSunPosition(): void {
 
   const radius = earth ? earth.getRadius() : 3000;
 
+  const simulatedTime = earthControlsManager
+    ? earthControlsManager.getSimulatedTime()
+    : guiControls?.simulatedTime ?? getCurrentUtcTimeHours();
+
   if (guiControls) {
-    if (guiControls.realTimeSun) {
-      const currentUtc = getCurrentUtcTimeHours();
-      guiControls.simulatedTime = currentUtc;
-      guiControls.timeDisplay = hoursToTimeString(currentUtc);
-      if (controlsManager && controlsManager.controllers) {
-        const { timeDisplay, timeSlider } = controlsManager.controllers;
-        if (timeDisplay) timeDisplay.updateDisplay();
-        if (timeSlider) timeSlider.updateDisplay();
-      }
-    }
+    guiControls.simulatedTime = simulatedTime;
+    guiControls.timeDisplay = earthControlsManager
+      ? earthControlsManager.getTimeDisplay()
+      : hoursToTimeString(simulatedTime);
+    guiControls.realTimeSun = earthControlsManager
+      ? earthControlsManager.isRealTimeSunEnabled()
+      : guiControls.realTimeSun;
+  }
 
-    if (guiControls.dayNightEffect) {
-      const sunVector = getSunVector3(radius, guiControls.simulatedTime);
-      directionalLight.position.copy(sunVector);
-    }
-
-    updateLighting();
-  } else {
-    const sunVector = getSunVector3(radius, getCurrentUtcTimeHours());
+  const dayNightActive = guiControls ? guiControls.dayNightEffect : true;
+  if (dayNightActive) {
+    const sunVector = getSunVector3(radius, simulatedTime);
     directionalLight.position.copy(sunVector);
   }
 
+  updateLighting();
   directionalLight.lookAt(0, 0, 0);
   uiManager.updateCoordinateDisplay(camera, earth);
 }

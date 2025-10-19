@@ -24,6 +24,9 @@ export class EarthControlsManager {
   private baseDirectionalIntensity: number;
   private dayBrightnessPercent: number;
   private nightBrightnessPercent: number;
+  private simulatedTime: number;
+  private timeDisplay: string;
+  private realTimeSunEnabled: boolean;
   private readonly DEFAULT_DAY_PERCENT = 70;
   private readonly DEFAULT_NIGHT_PERCENT = 40;
 
@@ -41,6 +44,9 @@ export class EarthControlsManager {
     this.baseDirectionalIntensity = this.directionalLight.intensity;
     this.dayBrightnessPercent = this.DEFAULT_DAY_PERCENT;
     this.nightBrightnessPercent = this.DEFAULT_NIGHT_PERCENT;
+    this.simulatedTime = this.getCurrentUtcTimeHours();
+    this.timeDisplay = this.hoursToTimeString(this.simulatedTime);
+    this.realTimeSunEnabled = true;
   }
 
   public toggleDayNightEffect(enabled: boolean): void {
@@ -122,20 +128,72 @@ export class EarthControlsManager {
   }
 
   public enableRealTimeSun(): void {
-    const guiControls = this.getGuiControls();
-    const currentUtc = this.getCurrentUtcTimeHours();
-    if (guiControls) {
-      guiControls.realTimeSun = true;
-      guiControls.simulatedTime = currentUtc;
-      guiControls.timeDisplay = this.hoursToTimeString(currentUtc);
-    }
+    this.realTimeSunEnabled = true;
+    this.updateSimulatedTime(this.getCurrentUtcTimeHours(), {
+      disableRealTime: false,
+    });
   }
 
   public disableRealTimeSun(): void {
-    const guiControls = this.getGuiControls();
-    if (guiControls) {
-      guiControls.realTimeSun = false;
+    if (!this.realTimeSunEnabled) return;
+    this.realTimeSunEnabled = false;
+    this.syncGui();
+  }
+
+  public initializeFromGui(gui: any): void {
+    if (!gui) return;
+
+    this.dayBrightnessPercent = this.clampBrightness(
+      gui.dayBrightness,
+      this.DEFAULT_DAY_PERCENT,
+    );
+    this.nightBrightnessPercent = this.clampBrightness(
+      gui.nightBrightness,
+      this.DEFAULT_NIGHT_PERCENT,
+    );
+
+    const initialTime = this.clampTime(gui.simulatedTime);
+    this.simulatedTime = initialTime;
+    this.timeDisplay =
+      typeof gui.timeDisplay === "string"
+        ? gui.timeDisplay
+        : this.hoursToTimeString(initialTime);
+    this.realTimeSunEnabled = Boolean(gui.realTimeSun);
+
+    this.syncGui();
+  }
+
+  public getSimulatedTime(): number {
+    if (this.realTimeSunEnabled) {
+      this.updateSimulatedTime(this.getCurrentUtcTimeHours(), {
+        disableRealTime: false,
+      });
     }
+    return this.simulatedTime;
+  }
+
+  public getTimeDisplay(): string {
+    return this.timeDisplay;
+  }
+
+  public isRealTimeSunEnabled(): boolean {
+    return this.realTimeSunEnabled;
+  }
+
+  public setSimulatedTime(hours: number): void {
+    this.updateSimulatedTime(hours, { disableRealTime: true });
+  }
+
+  public setTimeDisplay(value: string): boolean {
+    if (typeof value !== "string") {
+      return false;
+    }
+    const parsed = this.parseTimeString(value);
+    if (!Number.isFinite(parsed)) {
+      return false;
+    }
+    this.updateSimulatedTime(parsed, { disableRealTime: true });
+    return true;
   }
 
   private clampBrightness(value: any, fallback: number): number {
@@ -144,5 +202,58 @@ export class EarthControlsManager {
       return fallback;
     }
     return THREE.MathUtils.clamp(numeric, 0, 100);
+  }
+
+  private clampTime(value: any): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+    return THREE.MathUtils.clamp(numeric, 0, 24);
+  }
+
+  private updateSimulatedTime(
+    hours: number,
+    options: { disableRealTime?: boolean } = {},
+  ): void {
+    const clamped = this.clampTime(hours);
+    this.simulatedTime = clamped;
+    this.timeDisplay = this.hoursToTimeString(clamped);
+    if (options.disableRealTime) {
+      this.realTimeSunEnabled = false;
+    }
+    this.syncGui();
+  }
+
+  private parseTimeString(value: string): number {
+    const parts = value.split(":").map(Number);
+    if (parts.some((part) => Number.isNaN(part))) {
+      return NaN;
+    }
+    const hours = parts[0] || 0;
+    const minutes = parts[1] || 0;
+    const seconds = parts[2] || 0;
+    return hours + minutes / 60 + seconds / 3600;
+  }
+
+  private syncGui(): void {
+    const guiControls = this.getGuiControls();
+    if (!guiControls) return;
+
+    if (guiControls.dayBrightness !== this.dayBrightnessPercent) {
+      guiControls.dayBrightness = this.dayBrightnessPercent;
+    }
+    if (guiControls.nightBrightness !== this.nightBrightnessPercent) {
+      guiControls.nightBrightness = this.nightBrightnessPercent;
+    }
+    if (guiControls.simulatedTime !== this.simulatedTime) {
+      guiControls.simulatedTime = this.simulatedTime;
+    }
+    if (guiControls.timeDisplay !== this.timeDisplay) {
+      guiControls.timeDisplay = this.timeDisplay;
+    }
+    if (guiControls.realTimeSun !== this.realTimeSunEnabled) {
+      guiControls.realTimeSun = this.realTimeSunEnabled;
+    }
   }
 }
