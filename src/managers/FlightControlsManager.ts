@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { Flight } from "../Flight.ts";
+import { Flight } from "../flights/Flight.ts";
 import { Curves } from "../Curves.ts";
 import { PlanesShader } from "../planes/PlanesShader.ts";
-import { FlightUtils } from "../FlightUtils.ts";
+import { FlightUtils } from "../flights/FlightUtils.ts";
 import type { Flight as FlightData } from "../Data.ts";
 import type {
   FlightConfig,

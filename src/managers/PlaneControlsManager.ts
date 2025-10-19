@@ -1,4 +1,4 @@
-import { Flight } from "../Flight.ts";
+import { Flight } from "../flights/Flight.ts";
 import { PlanesShader } from "../planes/PlanesShader.ts";
 import type { PlaneControlsManagerOptions } from "../types.js";
 

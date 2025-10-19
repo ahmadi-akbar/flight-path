@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { Geolocation } from "./Data.ts";
-import { latLngToVector3 } from "./Utils.ts";
+import type { Geolocation } from "../Data.ts";
+import { latLngToVector3 } from "../Utils.ts";
 import type {
   Bounds,
   RandomCurveOptions,
@@ -8,7 +8,7 @@ import type {
   FlightConfigOptions,
   FlightConfig,
   GradientColorConfig,
-} from "./types.js";
+} from "../types.js";
 
 /**
  * Utility functions for generating flight paths and control points
