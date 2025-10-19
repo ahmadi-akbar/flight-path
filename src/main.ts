@@ -120,7 +120,6 @@ const MIN_CRUISE_ALTITUDE: number = 30;
 const MAX_CRUISE_ALTITUDE: number = 220;
 let preGeneratedConfigs: FlightConfig[] = [];
 let minLoadingTimeoutId: number | null = null;
-let flightControlsManager: FlightControlManager | null = null;
 
 window.earthTextureLoaded = false;
 window.minTimeElapsed = false;
@@ -226,6 +225,40 @@ const params: GuiParams = {
   randomSpeed: false,
   returnFlight: true,
 };
+
+const flightControlsManager = new FlightControlManager({
+  params,
+  maxFlights: MAX_FLIGHTS,
+  getFlights: () => flights,
+  getPreGeneratedConfigs: () => preGeneratedConfigs,
+  getMergedCurves: () => mergedCurves,
+  getMergedPanes: () => mergedPanes,
+  ensurePlaneDefaults,
+  assignRandomPlane,
+  resolvePaneColor,
+  resolveAnimationSpeed,
+  createFlightFromConfig,
+  updatePathVisibility,
+  updatePlaneVisibility,
+  syncFlightCount: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setFlightCount === "function" &&
+      controlsManager.guiControls?.numFlights !== value
+    ) {
+      controlsManager.setFlightCount(value);
+    }
+  },
+  syncReturnFlight: (value: boolean) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setReturnFlight === "function" &&
+      controlsManager.guiControls?.returnFlight !== value
+    ) {
+      controlsManager.setReturnFlight(value);
+    }
+  },
+});
 
 function clonePlaneEntry(entry: PlaneEntry | null): PlaneEntry | null {
   if (!entry) return null;
@@ -704,21 +737,6 @@ function setupGlobalControls(): void {
   toggleDayNightEffect(guiControls.dayNightEffect);
 }
 
-function applyReturnMode(): void {
-  preGeneratedConfigs.forEach((config, index) => {
-    if (!config) return;
-    config.returnFlight = params.returnFlight;
-  });
-
-  flights.forEach((flight) => {
-    flight.setReturnFlight(params.returnFlight);
-  });
-
-  if (mergedPanes && typeof mergedPanes.setReturnMode === "function") {
-    mergedPanes.setReturnMode(params.returnFlight);
-  }
-}
-
 function updateSunPosition(): void {
   if (!directionalLight) return;
 
@@ -1038,37 +1056,11 @@ function initializeFlights(): void {
   updatePathVisibility();
   updatePlaneVisibility();
 
-  applyReturnMode();
+  flightControlsManager.setReturnFlight(params.returnFlight);
 }
 
 // Update flight count (preserves existing flights)
 function updateFlightCount(count: number): void {
-  if (!flightControlsManager) {
-    flightControlsManager = new FlightControlManager({
-      params,
-      maxFlights: MAX_FLIGHTS,
-      getFlights: () => flights,
-      getPreGeneratedConfigs: () => preGeneratedConfigs,
-      getMergedCurves: () => mergedCurves,
-      ensurePlaneDefaults,
-      assignRandomPlane,
-      resolvePaneColor,
-      resolveAnimationSpeed,
-      createFlightFromConfig,
-      updatePathVisibility,
-      updatePlaneVisibility,
-      syncFlightCount: (value: number) => {
-        if (
-          controlsManager &&
-          typeof controlsManager.setFlightCount === "function" &&
-          controlsManager.guiControls?.numFlights !== value
-        ) {
-          controlsManager.setFlightCount(value);
-        }
-      },
-    });
-  }
-
   flightControlsManager.updateFlightCount(count);
 }
 
@@ -1193,17 +1185,7 @@ function updateHidePath(value: boolean): void {
 }
 
 function updateReturnFlight(value: boolean): void {
-  params.returnFlight = !!value;
-  applyReturnMode();
-
-  if (
-    controlsManager &&
-    typeof controlsManager.setReturnFlight === "function"
-  ) {
-    if (controlsManager.guiControls?.returnFlight !== params.returnFlight) {
-      controlsManager.setReturnFlight(params.returnFlight);
-    }
-  }
+  flightControlsManager.setReturnFlight(value);
 }
 
 function updatePaneStyle(style: string): void {

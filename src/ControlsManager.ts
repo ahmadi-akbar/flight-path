@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Flight } from "./Flight.ts";
 import { Curves } from "./Curves.ts";
+import { PanesShader } from "./PanesShader.ts";
 import { FlightUtils } from "./FlightUtils.ts";
 import type { Flight as FlightData } from "./Data.ts";
 
@@ -38,6 +39,7 @@ interface ControlsManagerOptions {
   getFlights: () => Flight[];
   getPreGeneratedConfigs: () => FlightConfig[];
   getMergedCurves: () => Curves | null;
+  getMergedPanes?: () => PanesShader | null;
   ensurePlaneDefaults: (config?: Partial<FlightConfig>) => FlightConfig;
   assignRandomPlane: (config?: Partial<FlightConfig>) => FlightConfig;
   resolvePaneColor: (config?: Partial<FlightConfig>) => number;
@@ -46,6 +48,7 @@ interface ControlsManagerOptions {
   updatePathVisibility: () => void;
   updatePlaneVisibility: () => void;
   syncFlightCount?: (value: number) => void;
+  syncReturnFlight?: (value: boolean) => void;
 }
 
 export class ControlsManager {
@@ -54,6 +57,7 @@ export class ControlsManager {
   private getFlights: () => Flight[];
   private getPreGeneratedConfigs: () => FlightConfig[];
   private getMergedCurves: () => Curves | null;
+  private getMergedPanes?: () => PanesShader | null;
   private ensurePlaneDefaults: (
     config?: Partial<FlightConfig>,
   ) => FlightConfig;
@@ -66,6 +70,7 @@ export class ControlsManager {
   private updatePathVisibility: () => void;
   private updatePlaneVisibility: () => void;
   private syncFlightCount?: (value: number) => void;
+  private syncReturnFlight?: (value: boolean) => void;
 
   constructor(options: ControlsManagerOptions) {
     this.params = options.params;
@@ -73,6 +78,7 @@ export class ControlsManager {
     this.getFlights = options.getFlights;
     this.getPreGeneratedConfigs = options.getPreGeneratedConfigs;
     this.getMergedCurves = options.getMergedCurves;
+    this.getMergedPanes = options.getMergedPanes;
     this.ensurePlaneDefaults = options.ensurePlaneDefaults;
     this.assignRandomPlane = options.assignRandomPlane;
     this.resolvePaneColor = options.resolvePaneColor;
@@ -81,6 +87,7 @@ export class ControlsManager {
     this.updatePathVisibility = options.updatePathVisibility;
     this.updatePlaneVisibility = options.updatePlaneVisibility;
     this.syncFlightCount = options.syncFlightCount;
+    this.syncReturnFlight = options.syncReturnFlight;
   }
 
   public updateFlightCount(target: number): void {
@@ -121,6 +128,7 @@ export class ControlsManager {
             baseConfig.controlPoints,
           ),
           segmentCount: this.params.segmentCount,
+          curveColor: baseConfig.curveColor,
           paneSize: this.params.planeSize,
           paneColor: this.resolvePaneColor(baseConfig),
           animationSpeed: this.resolveAnimationSpeed(baseConfig),
@@ -149,6 +157,39 @@ export class ControlsManager {
 
     if (typeof this.syncFlightCount === "function") {
       this.syncFlightCount(this.params.numFlights);
+    }
+  }
+
+  public setReturnFlight(value: boolean): void {
+    const flights = this.getFlights();
+    const preGeneratedConfigs = this.getPreGeneratedConfigs();
+    const nextValue = Boolean(value);
+    const previousValue = this.params.returnFlight;
+
+    this.params.returnFlight = nextValue;
+
+    preGeneratedConfigs.forEach((config) => {
+      if (config) {
+        config.returnFlight = nextValue;
+      }
+    });
+
+    flights.forEach((flight) => {
+      flight.setReturnFlight(nextValue);
+    });
+
+    if (this.getMergedPanes) {
+      const mergedPanes = this.getMergedPanes();
+      if (mergedPanes && typeof mergedPanes.setReturnMode === "function") {
+        mergedPanes.setReturnMode(nextValue);
+      }
+    }
+
+    if (
+      typeof this.syncReturnFlight === "function" &&
+      previousValue !== nextValue
+    ) {
+      this.syncReturnFlight(nextValue);
     }
   }
 }
