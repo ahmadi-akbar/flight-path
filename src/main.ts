@@ -10,6 +10,7 @@ import { Stars } from "./Stars.ts";
 import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
 import { FlightControlsManager } from "./FlightControlsManager.ts";
+import { FlightPathManager } from "./FlightPathManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
 import { planes as planeDefinitions } from "./Planes.ts";
 import {
@@ -256,6 +257,20 @@ const flightControlsManager = new FlightControlsManager({
       controlsManager.guiControls?.returnFlight !== value
     ) {
       controlsManager.setReturnFlight(value);
+    }
+  },
+});
+
+const flightPathManager = new FlightPathManager({
+  params,
+  getMergedCurves: () => mergedCurves,
+  syncDashSize: (value: number) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setDashSize === "function" &&
+      controlsManager.guiControls?.dashSize !== value
+    ) {
+      controlsManager.setDashSize(value);
     }
   },
 });
@@ -1006,7 +1021,7 @@ function initializeFlights(): void {
     baseElevation: params.elevationOffset,
   });
 
-  updateDashPattern();
+  flightPathManager.applyDashPattern();
   applyPaneTexture();
 
   const availableConfigs = preGeneratedConfigs.length;
@@ -1144,27 +1159,13 @@ function updatePlaneColor(color: any): void {
   }
 }
 
-function updateDashPattern(): void {
-  if (mergedCurves) {
-    mergedCurves.setDashPattern(params.dashSize, params.gapSize);
-    mergedCurves.applyUpdates();
-  }
-}
-
 function updateDashSize(size: number): void {
-  params.dashSize = size;
-  updateDashPattern();
-
-  if (controlsManager && typeof controlsManager.setDashSize === "function") {
-    if (controlsManager.guiControls?.dashSize !== size) {
-      controlsManager.setDashSize(size);
-    }
-  }
+  flightPathManager.setDashSize(size);
 }
 
 function updateGapSize(size: number): void {
   params.gapSize = size;
-  updateDashPattern();
+  flightPathManager.applyDashPattern();
 
   if (controlsManager && typeof controlsManager.setGapSize === "function") {
     if (controlsManager.guiControls?.gapSize !== size) {
