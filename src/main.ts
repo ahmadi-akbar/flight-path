@@ -9,6 +9,7 @@ import { FlightUtils } from "./FlightUtils.ts";
 import { Stars } from "./Stars.ts";
 import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
+import { EarthControlsManager } from "./EarthControlsManager.ts";
 import { FlightControlsManager } from "./FlightControlsManager.ts";
 import { FlightPathManager } from "./FlightPathManager.ts";
 import { PlaneControlsManager } from "./PlaneControlsManager.ts";
@@ -203,9 +204,7 @@ let svgTexturePromise: Promise<{
 }> | null = null;
 let controlsManager: Controls | null = null;
 let guiControls: any = null;
-let baseAmbientColor: THREE.Color | null = null;
-let baseAmbientIntensity: number = 0;
-let baseDirectionalIntensity: number = 0;
+let earthControlsManager: EarthControlsManager | null = null;
 const TARGET_AMBIENT_COLOR = new THREE.Color(0xffffff);
 const DEFAULT_DAY_BRIGHTNESS_PERCENT = 70;
 const DEFAULT_NIGHT_BRIGHTNESS_PERCENT = 40;
@@ -353,6 +352,15 @@ const planeControlsManager = new PlaneControlsManager({
       controlsManager.guiControls?.elevationOffset !== value
     ) {
       controlsManager.setPlaneElevation(value);
+    }
+  },
+  syncHidePlane: (value: boolean) => {
+    if (
+      controlsManager &&
+      typeof controlsManager.setHidePlane === "function" &&
+      controlsManager.guiControls?.hidePlane !== value
+    ) {
+      controlsManager.setHidePlane(value);
     }
   },
 });
@@ -589,41 +597,6 @@ function applyPaneColorMode(): void {
   });
 }
 
-function toggleAtmosphereEffect(enabled: boolean): void {
-  if (earth && earth.atmosphere) {
-    earth.atmosphere.mesh.visible = enabled;
-  }
-}
-
-function toggleDayNightEffect(enabled: boolean): void {
-  if (enabled) {
-    directionalLight.visible = true;
-    if (baseAmbientColor) {
-      ambientLight.color.copy(baseAmbientColor);
-    }
-    if (baseAmbientIntensity > 0) {
-      ambientLight.intensity = baseAmbientIntensity;
-    }
-    if (baseDirectionalIntensity > 0) {
-      directionalLight.intensity = baseDirectionalIntensity;
-    }
-  } else {
-    if (!baseAmbientColor) {
-      baseAmbientColor = ambientLight.color.clone();
-    }
-    if (baseAmbientIntensity === 0) {
-      baseAmbientIntensity = ambientLight.intensity;
-    }
-    if (baseDirectionalIntensity === 0) {
-      baseDirectionalIntensity = directionalLight.intensity;
-    }
-
-    directionalLight.visible = false;
-    directionalLight.intensity = 0;
-  }
-  updateLighting();
-}
-
 function updateLighting(): void {
   if (!guiControls) return;
 
@@ -640,10 +613,11 @@ function updateLighting(): void {
 
   directionalLight.intensity = dayIntensity;
 
-  const baseIntensity =
-    baseAmbientIntensity > 0 ? baseAmbientIntensity : ambientLight.intensity;
-  const baseColor = baseAmbientColor
-    ? baseAmbientColor.clone()
+  const baseIntensity = earthControlsManager
+    ? earthControlsManager.getBaseAmbientIntensity()
+    : ambientLight.intensity;
+  const baseColor = earthControlsManager
+    ? earthControlsManager.getBaseAmbientColor().clone()
     : ambientLight.color.clone();
   const targetAmbient = THREE.MathUtils.lerp(
     baseIntensity,
@@ -662,8 +636,12 @@ function setupGlobalControls(): void {
 
   controlsManager.setup(
     {
-      onDayNightEffectChange: toggleDayNightEffect,
-      onAtmosphereEffectChange: toggleAtmosphereEffect,
+      onDayNightEffectChange: (value: boolean) => {
+        earthControlsManager?.toggleDayNightEffect(value);
+      },
+      onAtmosphereEffectChange: (value: boolean) => {
+        earthControlsManager?.toggleAtmosphereEffect(value);
+      },
       onResetSunPosition: () => {
         directionalLight.position.set(0, 1000, 1000);
         updateSunPosition();
@@ -758,8 +736,8 @@ function setupGlobalControls(): void {
     (container as HTMLElement).style.display = "none";
   });
 
-  toggleAtmosphereEffect(guiControls.atmosphereEffect);
-  toggleDayNightEffect(guiControls.dayNightEffect);
+  earthControlsManager?.toggleAtmosphereEffect(guiControls.atmosphereEffect);
+  earthControlsManager?.toggleDayNightEffect(guiControls.dayNightEffect);
 }
 
 function updateSunPosition(): void {
@@ -1202,9 +1180,14 @@ directionalLight.position.set(1000, 1000, 1000);
 directionalLight.target.position.set(0, 0, 0);
 scene.add(directionalLight.target);
 scene.add(directionalLight);
-baseAmbientColor = ambientLight.color.clone();
-baseAmbientIntensity = ambientLight.intensity;
-baseDirectionalIntensity = directionalLight.intensity;
+
+earthControlsManager = new EarthControlsManager({
+  ambientLight,
+  directionalLight,
+  getGuiControls: () => guiControls,
+  updateLighting,
+  getEarth: () => earth,
+});
 
 setupGlobalControls();
 updateLighting();
