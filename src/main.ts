@@ -1,7 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import * as dat from "dat.gui";
 import Stats from "stats.js";
 import { Flight } from "./Flight.ts";
 import { Curves } from "./Curves.ts";
@@ -10,6 +9,7 @@ import { FlightUtils } from "./FlightUtils.ts";
 import { Stars } from "./Stars.ts";
 import { Earth } from "./Earth.ts";
 import { Controls } from "./Controls.ts";
+import { ControlsManager as FlightControlManager } from "./ControlsManager.ts";
 import { flights as dataFlights, type Flight as FlightData } from "./Data.ts";
 import { planes as planeDefinitions } from "./Planes.ts";
 import {
@@ -120,6 +120,7 @@ const MIN_CRUISE_ALTITUDE: number = 30;
 const MAX_CRUISE_ALTITUDE: number = 220;
 let preGeneratedConfigs: FlightConfig[] = [];
 let minLoadingTimeoutId: number | null = null;
+let flightControlsManager: FlightControlManager | null = null;
 
 window.earthTextureLoaded = false;
 window.minTimeElapsed = false;
@@ -440,13 +441,6 @@ function checkReadyToStart(): void {
     setInitialCameraPosition();
   }
 }
-// Setup dat.GUI
-const gui = new dat.GUI();
-// gui.add(params, 'segmentCount', 50, 500).step(50).name('Segments').onChange(updateSegmentCount)
-// gui.add(params, 'randomSpeed').name('Random Speed').onChange(() => {
-//     applyAnimationSpeedMode()
-// })
-
 function resolvePaneColor(config: Partial<FlightConfig> = {}): number {
   if (typeof config.paneColor === "number") {
     return config.paneColor;
@@ -1049,68 +1043,33 @@ function initializeFlights(): void {
 
 // Update flight count (preserves existing flights)
 function updateFlightCount(count: number): void {
-  const oldCount = flights.length;
-  const availableConfigs = preGeneratedConfigs.length || MAX_FLIGHTS;
-  const targetCount = Math.min(count, availableConfigs);
-  params.numFlights = targetCount;
-
-  if (targetCount > oldCount) {
-    // Add new flights (starting from the beginning)
-    if (targetCount > 1) {
-      for (let i = oldCount; i < targetCount; i++) {
-        let baseConfig: FlightConfig;
-        if (preGeneratedConfigs.length) {
-          const configIndex = i % preGeneratedConfigs.length;
-          baseConfig = ensurePlaneDefaults(preGeneratedConfigs[configIndex]);
-          baseConfig.returnFlight = params.returnFlight;
-          preGeneratedConfigs[configIndex] = baseConfig;
-        } else {
-          baseConfig = assignRandomPlane(
-            FlightUtils.generateRandomFlightConfig({ numControlPoints: 2 }),
-          );
-          baseConfig.returnFlight = params.returnFlight;
+  if (!flightControlsManager) {
+    flightControlsManager = new FlightControlManager({
+      params,
+      maxFlights: MAX_FLIGHTS,
+      getFlights: () => flights,
+      getPreGeneratedConfigs: () => preGeneratedConfigs,
+      getMergedCurves: () => mergedCurves,
+      ensurePlaneDefaults,
+      assignRandomPlane,
+      resolvePaneColor,
+      resolveAnimationSpeed,
+      createFlightFromConfig,
+      updatePathVisibility,
+      updatePlaneVisibility,
+      syncFlightCount: (value: number) => {
+        if (
+          controlsManager &&
+          typeof controlsManager.setFlightCount === "function" &&
+          controlsManager.guiControls?.numFlights !== value
+        ) {
+          controlsManager.setFlightCount(value);
         }
-        const flightConfig: FlightConfig = {
-          ...baseConfig,
-          controlPoints: FlightUtils.cloneControlPoints(
-            baseConfig.controlPoints,
-          ),
-          segmentCount: params.segmentCount,
-          curveColor: baseConfig.curveColor,
-          paneSize: params.planeSize,
-          paneColor: resolvePaneColor(baseConfig),
-          animationSpeed: resolveAnimationSpeed(baseConfig),
-          elevationOffset:
-            baseConfig.elevationOffset !== undefined
-              ? baseConfig.elevationOffset
-              : params.elevationOffset,
-          paneTextureIndex: baseConfig.paneTextureIndex,
-          returnFlight: params.returnFlight,
-        };
-        const flight = createFlightFromConfig(flightConfig, i);
-        flights.push(flight);
-      }
-      // Apply batched updates immediately after creating flights
-      if (mergedCurves) {
-        mergedCurves.applyUpdates();
-      }
-    }
-  } else if (targetCount < oldCount) {
-    // Remove excess flights
-    const flightsToRemove = flights.splice(targetCount);
-    flightsToRemove.forEach((flight) => flight.remove());
+      },
+    });
   }
 
-  // Update visible counts in merged renderers
-  updatePathVisibility();
-  updatePlaneVisibility();
-
-  // Sync with Controls.js
-  if (controlsManager && typeof controlsManager.setFlightCount === "function") {
-    if (controlsManager.guiControls?.numFlights !== params.numFlights) {
-      controlsManager.setFlightCount(params.numFlights);
-    }
-  }
+  flightControlsManager.updateFlightCount(count);
 }
 
 // Function to update segment count
