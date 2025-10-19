@@ -8,7 +8,7 @@ import type {
   TiltMode,
   FlightOptions,
   AnimationSpeedOptions,
-} from "../types.js";
+} from "../common/Types.js";
 
 /**
  * Flight combines a curve (from Curves) and panes (from PlanesShader) into a single flight unit.

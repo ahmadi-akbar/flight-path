@@ -16,7 +16,7 @@ import type {
   ControlsCallbacks,
   KnownControllerKey,
   Controllers,
-} from "./types.js";
+} from "../common/Types.js";
 
 /**
  * Controls class manages all GUI controls and their interactions

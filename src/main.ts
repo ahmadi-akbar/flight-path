@@ -28,7 +28,7 @@ import type {
   SvgAtlasInfo,
   PerfStats,
   GuiParams,
-} from "./types.js";
+} from "./common/Types.js";
 
 // Scene setup
 const scene = new THREE.Scene();

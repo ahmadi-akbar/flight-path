@@ -8,7 +8,7 @@ import type {
   FlightConfig,
   FlightParams,
   FlightControlsManagerOptions,
-} from "../types.js";
+} from "../common/Types.js";
 
 export class FlightControlsManager {
   private params: FlightParams;

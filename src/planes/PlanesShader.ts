@@ -5,7 +5,7 @@ import type {
   PlanesShaderOptions,
   AtlasInfo,
   InternalAtlasInfo,
-} from "../types.js";
+} from "../common/Types.js";
 
 /**
  * Tilt mode for pane orientation

@@ -8,7 +8,7 @@ import type {
   FlightConfigOptions,
   FlightConfig,
   GradientColorConfig,
-} from "../types.js";
+} from "../common/Types.js";
 
 /**
  * Utility functions for generating flight paths and control points
