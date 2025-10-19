@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import atmosphereVertexShader from "./shaders/atmosphere.vert?raw";
-import atmosphereFragmentShader from "./shaders/atmosphere.frag?raw";
+import atmosphereVertexShader from "../shaders/atmosphere.vert?raw";
+import atmosphereFragmentShader from "../shaders/atmosphere.frag?raw";
 
 export class Atmosphere {
   private earthRadius: number;

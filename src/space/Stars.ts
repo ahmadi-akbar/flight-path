@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import starsVertexShader from "./shaders/stars.vert?raw";
-import starsFragmentShader from "./shaders/stars.frag?raw";
+import starsVertexShader from "../shaders/stars.vert?raw";
+import starsFragmentShader from "../shaders/stars.frag?raw";
 
 export class Stars {
   private starCount: number;

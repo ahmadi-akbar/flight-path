@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Atmosphere } from "./Atmosphere.ts";
-import { latLngToVector3, getRandomPointOnSphere } from "./Utils.ts";
+import { latLngToVector3, getRandomPointOnSphere } from "../Utils.ts";
 
 export class Earth {
   private radius: number;

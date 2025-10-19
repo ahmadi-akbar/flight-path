@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { Earth } from "../Earth.ts";
+import type { Earth } from "../space/Earth.ts";
 import type { EarthControlsOptions } from "../types.js";
 
 export class EarthControlsManager {
