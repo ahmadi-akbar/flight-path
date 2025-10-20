@@ -20,6 +20,13 @@ import {
   getCurrentUtcTimeHours,
   animateCameraToPosition,
   hoursToTimeString,
+  parseHexColor,
+  clampPercentValue,
+  resolveDayIntensityFromPercent,
+  resolveNightMixFromPercent,
+  updateLighting as utilsUpdateLighting,
+  updateSunPosition as utilsUpdateSunPosition,
+  setInitialCameraPosition as utilsSetInitialCameraPosition,
 } from "./common/Utils.ts";
 import { UIManager } from "./managers/UIManager.ts";
 import type {
@@ -43,16 +50,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000);
 document.querySelector("#app")!.appendChild(renderer.domElement);
 
-// Setup Stats.js for performance monitoring
-const stats = new Stats();
-stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-document.body.appendChild(stats.dom);
-stats.dom.style.display = "none";
-stats.dom.style.position = "absolute";
-stats.dom.style.left = "0px";
-stats.dom.style.top = "0px";
-
-const uiManager = new UIManager(stats);
+const uiManager = new UIManager();
 
 // Global variables
 let flights: Flight[] = [];
@@ -81,47 +79,6 @@ window.guiControlsInstance = null;
 const DEFAULT_PLANE_COLOR: number = 0xff6666;
 const FALLBACK_PLANE_COUNT: number = 8;
 
-function parseHexColor(
-  colorValue: any,
-  fallback: number = DEFAULT_PLANE_COLOR,
-): number {
-  if (typeof colorValue === "number" && Number.isFinite(colorValue)) {
-    return colorValue;
-  }
-  if (typeof colorValue === "string") {
-    const normalized = colorValue.trim().replace(/^#/, "");
-    if (normalized.length > 0) {
-      const parsed = parseInt(normalized, 16);
-      if (!Number.isNaN(parsed)) {
-        return parsed;
-      }
-    }
-  }
-  return fallback;
-}
-
-function clampPercentValue(value: any, fallbackPercent: number): number {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return fallbackPercent;
-  }
-  return THREE.MathUtils.clamp(numeric, 0, 100);
-}
-
-function resolveDayIntensityFromPercent(
-  percentValue: any,
-  fallbackPercent: number = DEFAULT_DAY_BRIGHTNESS_PERCENT,
-): number {
-  const percent = clampPercentValue(percentValue, fallbackPercent) / 100;
-  return THREE.MathUtils.lerp(0.1, 3.0, percent);
-}
-
-function resolveNightMixFromPercent(
-  percentValue: any,
-  fallbackPercent: number = DEFAULT_NIGHT_BRIGHTNESS_PERCENT,
-): number {
-  return clampPercentValue(percentValue, fallbackPercent) / 100;
-}
 
 const planeEntries: PlaneEntry[] =
   Array.isArray(planeDefinitions) && planeDefinitions.length > 0
@@ -315,141 +272,38 @@ const planeControlsManager = new PlaneControlsManager({
   },
 });
 
-function clonePlaneEntry(entry: PlaneEntry | null): PlaneEntry | null {
-  if (!entry) return null;
-  const { name, svg, color, atlasIndex } = entry;
-  return { name, svg, color, atlasIndex };
-}
-
-function getPlaneEntryByAtlasIndex(index: number): PlaneEntry | null {
-  if (typeof index !== "number") return null;
-  if (index < 0 || index >= planeEntries.length) return null;
-  return planeEntries[index];
-}
-
-function getPlaneEntryBySvg(svgName: string): PlaneEntry | null {
-  if (typeof svgName !== "string" || !svgName) return null;
-  return planeEntries.find((entry) => entry.svg === svgName) || null;
-}
-
-function getPlaneEntryByName(name: string): PlaneEntry | null {
-  if (typeof name !== "string" || !name) return null;
-  return planeEntries.find((entry) => entry.name === name) || null;
-}
-
-function getRandomPlaneEntry(): PlaneEntry | null {
-  if (!planeEntries.length) return null;
-  const randomIndex = Math.floor(Math.random() * planeEntries.length);
-  return planeEntries[randomIndex];
-}
-
+// Plane utility functions - now using FlightUtils
 function ensurePlaneDefaults(config: Partial<FlightConfig> = {}): FlightConfig {
-  const providedPlaneInfo = config.planeInfo;
-  let planeEntry: PlaneEntry | null = null;
-
-  if (providedPlaneInfo && typeof providedPlaneInfo === "object") {
-    if (typeof providedPlaneInfo.atlasIndex === "number") {
-      planeEntry = getPlaneEntryByAtlasIndex(providedPlaneInfo.atlasIndex);
-    }
-    if (!planeEntry && providedPlaneInfo.svg) {
-      planeEntry = getPlaneEntryBySvg(providedPlaneInfo.svg);
-    }
-    if (!planeEntry && providedPlaneInfo.name) {
-      planeEntry = getPlaneEntryByName(providedPlaneInfo.name);
-    }
-  }
-
-  if (!planeEntry && typeof config.paneTextureIndex === "number") {
-    planeEntry = getPlaneEntryByAtlasIndex(config.paneTextureIndex);
-  }
-
-  if (!planeEntry) {
-    planeEntry = getRandomPlaneEntry();
-  }
-
-  if (!planeEntry) {
-    const fallbackColor =
-      typeof config.paneColor === "number"
-        ? config.paneColor
-        : DEFAULT_PLANE_COLOR;
-    const fallbackTextureIndex =
-      typeof config.paneTextureIndex === "number" ? config.paneTextureIndex : 0;
-
-    return {
-      controlPoints: config.controlPoints || [],
-      segmentCount: config.segmentCount || params.segmentCount,
-      paneSize: config.paneSize || params.planeSize,
-      elevationOffset: config.elevationOffset || params.elevationOffset,
-      animationSpeed: config.animationSpeed || params.animationSpeed,
-      tiltMode: config.tiltMode || params.tiltMode,
-      returnFlight: config.returnFlight || params.returnFlight,
-      paneColor: fallbackColor,
-      paneTextureIndex: fallbackTextureIndex,
-      planeInfo: providedPlaneInfo ?? null,
-      flightData: config.flightData || null,
-    };
-  }
-
-  return {
-    controlPoints: config.controlPoints || [],
-    segmentCount: config.segmentCount || params.segmentCount,
-    paneSize: config.paneSize || params.planeSize,
-    elevationOffset: config.elevationOffset || params.elevationOffset,
-    animationSpeed: config.animationSpeed || params.animationSpeed,
-    tiltMode: config.tiltMode || params.tiltMode,
-    returnFlight: config.returnFlight || params.returnFlight,
-    paneColor: parseHexColor(planeEntry.color, DEFAULT_PLANE_COLOR),
-    paneTextureIndex: planeEntry.atlasIndex,
-    planeInfo: clonePlaneEntry(planeEntry),
-    flightData: config.flightData || null,
-  };
+  return FlightUtils.ensurePlaneDefaults(
+    config,
+    planeEntries,
+    DEFAULT_PLANE_COLOR,
+    parseHexColor,
+  );
 }
 
 function assignRandomPlane(config: Partial<FlightConfig> = {}): FlightConfig {
-  return ensurePlaneDefaults({
-    ...config,
-    planeInfo: null,
-    paneTextureIndex: undefined,
-    paneColor: undefined,
-  });
+  return FlightUtils.assignRandomPlane(
+    config,
+    planeEntries,
+    DEFAULT_PLANE_COLOR,
+    parseHexColor,
+  );
 }
 
 function createDataFlightConfig(entry: FlightData): FlightConfig | null {
-  if (!entry) {
-    return null;
-  }
-
-  const { departure, arrival } = entry;
-  const controlPoints = FlightUtils.generateParabolicControlPoints(
-    departure,
-    arrival,
-    {
-      radius: EARTH_RADIUS,
-      takeoffOffset: TAKEOFF_LANDING_OFFSET,
-      minCurveAltitude: MIN_CURVE_ALTITUDE,
-      minCruiseAltitude: MIN_CRUISE_ALTITUDE,
-      maxCruiseAltitude: MAX_CRUISE_ALTITUDE,
-    },
+  return FlightUtils.createDataFlightConfig(
+    entry,
+    params,
+    EARTH_RADIUS,
+    TAKEOFF_LANDING_OFFSET,
+    MIN_CURVE_ALTITUDE,
+    MIN_CRUISE_ALTITUDE,
+    MAX_CRUISE_ALTITUDE,
+    planeEntries,
+    DEFAULT_PLANE_COLOR,
+    parseHexColor,
   );
-  if (!controlPoints.length) {
-    return null;
-  }
-
-  return assignRandomPlane({
-    controlPoints,
-    segmentCount: params.segmentCount,
-    curveColor: FlightUtils.createGradientColorConfig(departure),
-    paneCount: 1,
-    paneSize: params.planeSize,
-    elevationOffset: params.elevationOffset,
-    animationSpeed: params.animationSpeed,
-    tiltMode: params.tiltMode,
-    returnFlight: params.returnFlight,
-    flightData: {
-      departure,
-      arrival,
-    },
-  });
 }
 
 // Pre-generate flight configurations for stability
@@ -548,42 +402,15 @@ function applyPaneColorMode(): void {
 }
 
 function updateLighting(): void {
-  if (!guiControls) return;
-
-  if (!guiControls.dayNightEffect) {
-    ambientLight.color.copy(TARGET_AMBIENT_COLOR);
-    ambientLight.intensity = 1.6;
-    return;
-  }
-
-  const dayPercent = earthControlsManager
-    ? earthControlsManager.getDayBrightnessPercent()
-    : guiControls.dayBrightness ?? DEFAULT_DAY_BRIGHTNESS_PERCENT;
-  const nightPercent = earthControlsManager
-    ? earthControlsManager.getNightBrightnessPercent()
-    : guiControls.nightBrightness ?? DEFAULT_NIGHT_BRIGHTNESS_PERCENT;
-
-  const dayIntensity = resolveDayIntensityFromPercent(dayPercent);
-  const nightMix = resolveNightMixFromPercent(nightPercent);
-
-  directionalLight.intensity = dayIntensity;
-
-  const baseIntensity = earthControlsManager
-    ? earthControlsManager.getBaseAmbientIntensity()
-    : ambientLight.intensity;
-  const baseColor = earthControlsManager
-    ? earthControlsManager.getBaseAmbientColor().clone()
-    : ambientLight.color.clone();
-  const targetAmbient = THREE.MathUtils.lerp(
-    baseIntensity,
-    dayIntensity * 0.95,
-    nightMix,
+  utilsUpdateLighting(
+    guiControls,
+    earthControlsManager,
+    ambientLight,
+    directionalLight,
+    TARGET_AMBIENT_COLOR,
+    DEFAULT_DAY_BRIGHTNESS_PERCENT,
+    DEFAULT_NIGHT_BRIGHTNESS_PERCENT,
   );
-  const colorBlend = THREE.MathUtils.clamp(nightMix * 0.85, 0, 1);
-
-  const blendedColor = baseColor.lerp(TARGET_AMBIENT_COLOR, colorBlend);
-  ambientLight.color.copy(blendedColor);
-  ambientLight.intensity = targetAmbient;
 }
 
 function setupGlobalControls(): void {
@@ -636,7 +463,7 @@ function setupGlobalControls(): void {
       onPlaneSizeChange: (value: number) => {
         updatePlaneSize(value);
       },
-      onPlaneColorChange: (value: number) => {
+      onPlaneColorChange: (value: string) => {
         updatePlaneColor(value);
       },
       onAnimationSpeedChange: (value: number) => {
@@ -711,60 +538,24 @@ function setupGlobalControls(): void {
 }
 
 function updateSunPosition(): void {
-  if (!directionalLight) return;
-
-  const radius = earth ? earth.getRadius() : 3000;
-
-  const simulatedTime = earthControlsManager
-    ? earthControlsManager.getSimulatedTime()
-    : guiControls?.simulatedTime ?? getCurrentUtcTimeHours();
-
-  if (guiControls) {
-    guiControls.simulatedTime = simulatedTime;
-    guiControls.timeDisplay = earthControlsManager
-      ? earthControlsManager.getTimeDisplay()
-      : hoursToTimeString(simulatedTime);
-    guiControls.realTimeSun = earthControlsManager
-      ? earthControlsManager.isRealTimeSunEnabled()
-      : guiControls.realTimeSun;
-  }
-
-  const dayNightActive = guiControls ? guiControls.dayNightEffect : true;
-  if (dayNightActive) {
-    const sunVector = getSunVector3(radius, simulatedTime);
-    directionalLight.position.copy(sunVector);
-  }
-
-  updateLighting();
-  directionalLight.lookAt(0, 0, 0);
-  uiManager.updateCoordinateDisplay(camera, earth);
+  utilsUpdateSunPosition(
+    directionalLight,
+    earth,
+    earthControlsManager,
+    guiControls,
+    uiManager,
+    camera,
+    updateLighting,
+  );
 }
 
 function setInitialCameraPosition(): void {
-  if (!earth || initialCameraPositioned) return;
-
-  const radius = earth.getRadius();
-  const sunPos = getSunVector3(radius, getCurrentUtcTimeHours());
-  const sunDirection = sunPos.clone().normalize();
-
-  const angle = THREE.MathUtils.degToRad(70);
-  const rotatedDirection = new THREE.Vector3(
-    sunDirection.x * Math.cos(angle) + sunDirection.z * Math.sin(angle),
-    sunDirection.y,
-    -sunDirection.x * Math.sin(angle) + sunDirection.z * Math.cos(angle),
+  initialCameraPositioned = utilsSetInitialCameraPosition(
+    earth,
+    camera,
+    uiManager,
+    initialCameraPositioned,
   );
-
-  const targetDistance = radius * 2.1;
-  const targetPosition = rotatedDirection.multiplyScalar(targetDistance);
-  const startPosition = targetPosition.clone().multiplyScalar(1.25);
-
-  camera.position.copy(startPosition);
-  camera.lookAt(0, 0, 0);
-  animateCameraToPosition(camera, startPosition, targetPosition, 3000, 500);
-
-  initialCameraPositioned = true;
-
-  uiManager.removeLoadingScreen();
 }
 
 function loadSvgTexture(): Promise<{
@@ -1207,7 +998,7 @@ window.addEventListener("keydown", (e) => {
 function animate(): void {
   requestAnimationFrame(animate);
 
-  stats.begin(); // Begin measuring
+  uiManager.beginStats(); // Begin measuring
 
   const delta = clock.getDelta();
   let t0: number, t1: number;
@@ -1264,7 +1055,7 @@ function animate(): void {
     }
   }
 
-  stats.end(); // End measuring
+  uiManager.endStats(); // End measuring
 }
 
 // Handle window resize

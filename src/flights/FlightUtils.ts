@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { Geolocation } from "../common/Data.ts";
+import type { Geolocation, Flight as FlightData } from "../common/Data.ts";
 import { latLngToVector3 } from "../common/Utils.ts";
 import type {
   Bounds,
@@ -8,6 +8,7 @@ import type {
   FlightConfigOptions,
   FlightConfig,
   GradientColorConfig,
+  PlaneEntry,
 } from "../common/Types.js";
 
 /**
@@ -425,5 +426,250 @@ export class FlightUtils {
       tiltMode: options.tiltMode || "Perpendicular",
       returnFlight: options.returnFlight || false,
     };
+  }
+
+  /**
+   * Plane entry utility functions
+   */
+
+  /**
+   * Clone a plane entry object
+   * @param entry - Plane entry to clone
+   * @returns Cloned plane entry or null
+   */
+  static clonePlaneEntry(entry: PlaneEntry | null): PlaneEntry | null {
+    if (!entry) return null;
+    const { name, svg, color, atlasIndex } = entry;
+    return { name, svg, color, atlasIndex };
+  }
+
+  /**
+   * Get plane entry by atlas index
+   * @param index - Atlas index
+   * @param planeEntries - Array of plane entries
+   * @returns Plane entry or null
+   */
+  static getPlaneEntryByAtlasIndex(
+    index: number,
+    planeEntries: PlaneEntry[],
+  ): PlaneEntry | null {
+    if (typeof index !== "number") return null;
+    if (index < 0 || index >= planeEntries.length) return null;
+    return planeEntries[index];
+  }
+
+  /**
+   * Get plane entry by SVG name
+   * @param svgName - SVG file name
+   * @param planeEntries - Array of plane entries
+   * @returns Plane entry or null
+   */
+  static getPlaneEntryBySvg(
+    svgName: string,
+    planeEntries: PlaneEntry[],
+  ): PlaneEntry | null {
+    if (typeof svgName !== "string" || !svgName) return null;
+    return planeEntries.find((entry) => entry.svg === svgName) || null;
+  }
+
+  /**
+   * Get plane entry by name
+   * @param name - Plane name
+   * @param planeEntries - Array of plane entries
+   * @returns Plane entry or null
+   */
+  static getPlaneEntryByName(
+    name: string,
+    planeEntries: PlaneEntry[],
+  ): PlaneEntry | null {
+    if (typeof name !== "string" || !name) return null;
+    return planeEntries.find((entry) => entry.name === name) || null;
+  }
+
+  /**
+   * Get a random plane entry
+   * @param planeEntries - Array of plane entries
+   * @returns Random plane entry or null
+   */
+  static getRandomPlaneEntry(planeEntries: PlaneEntry[]): PlaneEntry | null {
+    if (!planeEntries.length) return null;
+    const randomIndex = Math.floor(Math.random() * planeEntries.length);
+    return planeEntries[randomIndex];
+  }
+
+  /**
+   * Ensure plane defaults are set in flight configuration
+   * @param config - Partial flight configuration
+   * @param planeEntries - Array of available plane entries
+   * @param defaultPlaneColor - Default plane color
+   * @param parseHexColor - Function to parse hex colors
+   * @returns Complete flight configuration with plane defaults
+   */
+  static ensurePlaneDefaults(
+    config: Partial<FlightConfig> = {},
+    planeEntries: PlaneEntry[],
+    defaultPlaneColor: number,
+    parseHexColor: (value: any, fallback: number) => number,
+  ): FlightConfig {
+    const providedPlaneInfo = config.planeInfo;
+    let planeEntry: PlaneEntry | null = null;
+
+    if (providedPlaneInfo && typeof providedPlaneInfo === "object") {
+      if (typeof providedPlaneInfo.atlasIndex === "number") {
+        planeEntry = this.getPlaneEntryByAtlasIndex(
+          providedPlaneInfo.atlasIndex,
+          planeEntries,
+        );
+      }
+      if (!planeEntry && providedPlaneInfo.svg) {
+        planeEntry = this.getPlaneEntryBySvg(providedPlaneInfo.svg, planeEntries);
+      }
+      if (!planeEntry && providedPlaneInfo.name) {
+        planeEntry = this.getPlaneEntryByName(providedPlaneInfo.name, planeEntries);
+      }
+    }
+
+    if (!planeEntry && typeof config.paneTextureIndex === "number") {
+      planeEntry = this.getPlaneEntryByAtlasIndex(
+        config.paneTextureIndex,
+        planeEntries,
+      );
+    }
+
+    if (!planeEntry) {
+      planeEntry = this.getRandomPlaneEntry(planeEntries);
+    }
+
+    if (!planeEntry) {
+      const fallbackColor =
+        typeof config.paneColor === "number"
+          ? config.paneColor
+          : defaultPlaneColor;
+      const fallbackTextureIndex =
+        typeof config.paneTextureIndex === "number" ? config.paneTextureIndex : 0;
+
+      return {
+        controlPoints: config.controlPoints || [],
+        segmentCount: config.segmentCount || 100,
+        paneSize: config.paneSize || 100,
+        elevationOffset: config.elevationOffset || 15,
+        animationSpeed: config.animationSpeed || 0.1,
+        tiltMode: config.tiltMode || "Tangent",
+        returnFlight: config.returnFlight || false,
+        paneColor: fallbackColor,
+        paneTextureIndex: fallbackTextureIndex,
+        planeInfo: providedPlaneInfo ?? null,
+        flightData: config.flightData || null,
+      };
+    }
+
+    return {
+      controlPoints: config.controlPoints || [],
+      segmentCount: config.segmentCount || 100,
+      paneSize: config.paneSize || 100,
+      elevationOffset: config.elevationOffset || 15,
+      animationSpeed: config.animationSpeed || 0.1,
+      tiltMode: config.tiltMode || "Tangent",
+      returnFlight: config.returnFlight || false,
+      paneColor: parseHexColor(planeEntry.color, defaultPlaneColor),
+      paneTextureIndex: planeEntry.atlasIndex,
+      planeInfo: this.clonePlaneEntry(planeEntry),
+      flightData: config.flightData || null,
+    };
+  }
+
+  /**
+   * Assign a random plane to flight configuration
+   * @param config - Partial flight configuration
+   * @param planeEntries - Array of available plane entries
+   * @param defaultPlaneColor - Default plane color
+   * @param parseHexColor - Function to parse hex colors
+   * @returns Flight configuration with random plane assigned
+   */
+  static assignRandomPlane(
+    config: Partial<FlightConfig> = {},
+    planeEntries: PlaneEntry[],
+    defaultPlaneColor: number,
+    parseHexColor: (value: any, fallback: number) => number,
+  ): FlightConfig {
+    return this.ensurePlaneDefaults(
+      {
+        ...config,
+        planeInfo: null,
+        paneTextureIndex: undefined,
+        paneColor: undefined,
+      },
+      planeEntries,
+      defaultPlaneColor,
+      parseHexColor,
+    );
+  }
+
+  /**
+   * Create flight configuration from flight data
+   * @param entry - Flight data entry
+   * @param params - GUI parameters
+   * @param earthRadius - Earth radius
+   * @param takeoffLandingOffset - Takeoff/landing offset
+   * @param minCurveAltitude - Minimum curve altitude
+   * @param minCruiseAltitude - Minimum cruise altitude
+   * @param maxCruiseAltitude - Maximum cruise altitude
+   * @param planeEntries - Array of available plane entries
+   * @param defaultPlaneColor - Default plane color
+   * @param parseHexColor - Function to parse hex colors
+   * @returns Flight configuration or null
+   */
+  static createDataFlightConfig(
+    entry: FlightData,
+    params: any,
+    earthRadius: number,
+    takeoffLandingOffset: number,
+    minCurveAltitude: number,
+    minCruiseAltitude: number,
+    maxCruiseAltitude: number,
+    planeEntries: PlaneEntry[],
+    defaultPlaneColor: number,
+    parseHexColor: (value: any, fallback: number) => number,
+  ): FlightConfig | null {
+    if (!entry) {
+      return null;
+    }
+
+    const { departure, arrival } = entry;
+    const controlPoints = this.generateParabolicControlPoints(
+      departure,
+      arrival,
+      {
+        radius: earthRadius,
+        takeoffOffset: takeoffLandingOffset,
+        minCurveAltitude: minCurveAltitude,
+        minCruiseAltitude: minCruiseAltitude,
+        maxCruiseAltitude: maxCruiseAltitude,
+      },
+    );
+    if (!controlPoints.length) {
+      return null;
+    }
+
+    return this.assignRandomPlane(
+      {
+        controlPoints,
+        segmentCount: params.segmentCount,
+        curveColor: this.createGradientColorConfig(departure),
+        paneCount: 1,
+        paneSize: params.planeSize,
+        elevationOffset: params.elevationOffset,
+        animationSpeed: params.animationSpeed,
+        tiltMode: params.tiltMode,
+        returnFlight: params.returnFlight,
+        flightData: {
+          departure,
+          arrival,
+        },
+      },
+      planeEntries,
+      defaultPlaneColor,
+      parseHexColor,
+    );
   }
 }

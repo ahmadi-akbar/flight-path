@@ -447,6 +447,7 @@ export interface GuiParams {
   dashSize: number;
   gapSize: number;
   hidePath: boolean;
+  randomSpeed: boolean;
 }
 
 // =============================================================================

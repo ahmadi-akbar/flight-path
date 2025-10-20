@@ -6,7 +6,7 @@ import { vector3ToLatLng } from "../common/Utils.ts";
 
 /**
  * UIManager centralizes DOM overlay helpers such as the loading screen,
- * dat.GUI visibility toggles, and footer coordinate updates.
+ * dat.GUI visibility toggles, footer coordinate updates, and stats management.
  */
 export class UIManager {
   private readonly stats: Stats;
@@ -14,8 +14,15 @@ export class UIManager {
   private loadingScreenElement: HTMLElement | null = null;
   private footerCoordinatesElement: HTMLElement | null = null;
 
-  constructor(stats: Stats) {
-    this.stats = stats;
+  constructor() {
+    // Initialize Stats.js for performance monitoring
+    this.stats = new Stats();
+    this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild(this.stats.dom);
+    this.stats.dom.style.display = "none";
+    this.stats.dom.style.position = "absolute";
+    this.stats.dom.style.left = "0px";
+    this.stats.dom.style.top = "0px";
   }
 
   public createLoadingScreen(): void {
@@ -69,7 +76,7 @@ export class UIManager {
       (container as HTMLElement).style.display = "none";
     });
 
-    this.stats.dom.style.display = "none";
+    this.hideStats();
     if (this.footerCoordinatesElement) {
       this.footerCoordinatesElement.style.display = "none";
     }
@@ -80,7 +87,7 @@ export class UIManager {
       (container as HTMLElement).style.display = "block";
     });
 
-    this.stats.dom.style.display = "block";
+    this.showStats();
 
     if (this.footerCoordinatesElement) {
       this.footerCoordinatesElement.style.display = "block";
@@ -174,5 +181,31 @@ export class UIManager {
     const coords = vector3ToLatLng(surfacePoint, earth.getRadius());
 
     this.footerCoordinatesElement.textContent = `Lat: ${coords.lat.toFixed(2)}°, Lng: ${coords.lng.toFixed(2)}°`;
+  }
+
+  // Stats management methods
+  public beginStats(): void {
+    this.stats.begin();
+  }
+
+  public endStats(): void {
+    this.stats.end();
+  }
+
+  public showStats(): void {
+    this.stats.dom.style.display = "block";
+  }
+
+  public hideStats(): void {
+    this.stats.dom.style.display = "none";
+  }
+
+  public toggleStats(): void {
+    const isVisible = this.stats.dom.style.display !== "none";
+    this.stats.dom.style.display = isVisible ? "none" : "block";
+  }
+
+  public getStats(): Stats {
+    return this.stats;
   }
 }

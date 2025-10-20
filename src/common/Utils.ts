@@ -293,3 +293,221 @@ export function vector3ToLatLng(
 
   return { lat, lng };
 }
+
+/**
+ * Color and value utility functions
+ */
+
+/**
+ * Parse a hex color value from various input types
+ * @param colorValue - Color value to parse (number, string, etc.)
+ * @param fallback - Fallback color if parsing fails
+ * @returns Parsed color as number
+ */
+export function parseHexColor(
+  colorValue: any,
+  fallback: number = 0xff6666,
+): number {
+  if (typeof colorValue === "number" && Number.isFinite(colorValue)) {
+    return colorValue;
+  }
+  if (typeof colorValue === "string") {
+    const normalized = colorValue.trim().replace(/^#/, "");
+    if (normalized.length > 0) {
+      const parsed = parseInt(normalized, 16);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return fallback;
+}
+
+/**
+ * Clamp a percentage value between 0 and 100
+ * @param value - Value to clamp
+ * @param fallbackPercent - Fallback percentage if value is invalid
+ * @returns Clamped percentage value
+ */
+export function clampPercentValue(value: any, fallbackPercent: number): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return fallbackPercent;
+  }
+  return THREE.MathUtils.clamp(numeric, 0, 100);
+}
+
+/**
+ * Resolve day intensity from percentage value
+ * @param percentValue - Percentage value (0-100)
+ * @param fallbackPercent - Fallback percentage if value is invalid
+ * @returns Day intensity value (0.1 to 3.0)
+ */
+export function resolveDayIntensityFromPercent(
+  percentValue: any,
+  fallbackPercent: number = 70,
+): number {
+  const percent = clampPercentValue(percentValue, fallbackPercent) / 100;
+  return THREE.MathUtils.lerp(0.1, 3.0, percent);
+}
+
+/**
+ * Resolve night mix from percentage value
+ * @param percentValue - Percentage value (0-100)
+ * @param fallbackPercent - Fallback percentage if value is invalid
+ * @returns Night mix value (0.0 to 1.0)
+ */
+export function resolveNightMixFromPercent(
+  percentValue: any,
+  fallbackPercent: number = 40,
+): number {
+  return clampPercentValue(percentValue, fallbackPercent) / 100;
+}
+
+/**
+ * Lighting and rendering utility functions
+ */
+
+/**
+ * Update lighting based on day/night settings
+ * @param guiControls - GUI controls object
+ * @param earthControlsManager - Earth controls manager
+ * @param ambientLight - Ambient light object
+ * @param directionalLight - Directional light object
+ * @param targetAmbientColor - Target ambient color
+ * @param defaultDayBrightness - Default day brightness percentage
+ * @param defaultNightBrightness - Default night brightness percentage
+ */
+export function updateLighting(
+  guiControls: any,
+  earthControlsManager: any,
+  ambientLight: THREE.AmbientLight,
+  directionalLight: THREE.DirectionalLight,
+  targetAmbientColor: THREE.Color,
+  defaultDayBrightness: number = 70,
+  defaultNightBrightness: number = 40,
+): void {
+  if (!guiControls) return;
+
+  if (!guiControls.dayNightEffect) {
+    ambientLight.color.copy(targetAmbientColor);
+    ambientLight.intensity = 1.6;
+    return;
+  }
+
+  const dayPercent = earthControlsManager
+    ? earthControlsManager.getDayBrightnessPercent()
+    : guiControls.dayBrightness ?? defaultDayBrightness;
+  const nightPercent = earthControlsManager
+    ? earthControlsManager.getNightBrightnessPercent()
+    : guiControls.nightBrightness ?? defaultNightBrightness;
+
+  const dayIntensity = resolveDayIntensityFromPercent(dayPercent);
+  const nightMix = resolveNightMixFromPercent(nightPercent);
+
+  directionalLight.intensity = dayIntensity;
+
+  const baseIntensity = earthControlsManager
+    ? earthControlsManager.getBaseAmbientIntensity()
+    : ambientLight.intensity;
+  const baseColor = earthControlsManager
+    ? earthControlsManager.getBaseAmbientColor().clone()
+    : ambientLight.color.clone();
+  const targetAmbient = THREE.MathUtils.lerp(
+    baseIntensity,
+    dayIntensity * 0.95,
+    nightMix,
+  );
+  const colorBlend = THREE.MathUtils.clamp(nightMix * 0.85, 0, 1);
+
+  const blendedColor = baseColor.lerp(targetAmbientColor, colorBlend);
+  ambientLight.color.copy(blendedColor);
+  ambientLight.intensity = targetAmbient;
+}
+
+/**
+ * Update sun position based on time
+ * @param directionalLight - Directional light object
+ * @param earth - Earth object
+ * @param earthControlsManager - Earth controls manager
+ * @param guiControls - GUI controls object
+ * @param uiManager - UI manager for coordinate display
+ * @param camera - Camera object
+ * @param updateLightingFn - Function to update lighting
+ */
+export function updateSunPosition(
+  directionalLight: THREE.DirectionalLight,
+  earth: any,
+  earthControlsManager: any,
+  guiControls: any,
+  uiManager: any,
+  camera: THREE.Camera,
+  updateLightingFn: () => void,
+): void {
+  if (!directionalLight) return;
+
+  const radius = earth ? earth.getRadius() : 3000;
+
+  const simulatedTime = earthControlsManager
+    ? earthControlsManager.getSimulatedTime()
+    : guiControls?.simulatedTime ?? getCurrentUtcTimeHours();
+
+  if (guiControls) {
+    guiControls.simulatedTime = simulatedTime;
+    guiControls.timeDisplay = earthControlsManager
+      ? earthControlsManager.getTimeDisplay()
+      : hoursToTimeString(simulatedTime);
+    guiControls.realTimeSun = earthControlsManager
+      ? earthControlsManager.isRealTimeSunEnabled()
+      : guiControls.realTimeSun;
+  }
+
+  const dayNightActive = guiControls ? guiControls.dayNightEffect : true;
+  if (dayNightActive) {
+    const sunVector = getSunVector3(radius, simulatedTime);
+    directionalLight.position.copy(sunVector);
+  }
+
+  updateLightingFn();
+  directionalLight.lookAt(0, 0, 0);
+  uiManager.updateCoordinateDisplay(camera, earth);
+}
+
+/**
+ * Set initial camera position relative to sun
+ * @param earth - Earth object
+ * @param camera - Camera object
+ * @param uiManager - UI manager
+ * @param initialCameraPositioned - Flag to track if camera was positioned
+ * @returns Updated initialCameraPositioned flag
+ */
+export function setInitialCameraPosition(
+  earth: any,
+  camera: THREE.Camera,
+  uiManager: any,
+  initialCameraPositioned: boolean,
+): boolean {
+  if (!earth || initialCameraPositioned) return initialCameraPositioned;
+
+  const radius = earth.getRadius();
+  const sunPos = getSunVector3(radius, getCurrentUtcTimeHours());
+  const sunDirection = sunPos.clone().normalize();
+
+  const angle = THREE.MathUtils.degToRad(70);
+  const rotatedDirection = new THREE.Vector3(
+    sunDirection.x * Math.cos(angle) + sunDirection.z * Math.sin(angle),
+    sunDirection.y,
+    -sunDirection.x * Math.sin(angle) + sunDirection.z * Math.cos(angle),
+  );
+
+  const targetDistance = radius * 2.1;
+  const targetPosition = rotatedDirection.multiplyScalar(targetDistance);
+  const startPosition = targetPosition.clone().multiplyScalar(1.25);
+
+  camera.position.copy(startPosition);
+  camera.lookAt(0, 0, 0);
+  animateCameraToPosition(camera, startPosition, targetPosition, 3000, 500);
+
+  uiManager.removeLoadingScreen();
+  return true;
+}
