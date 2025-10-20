@@ -63,6 +63,8 @@ export class App {
   private stars: Stars | null = null;
   private earth: Earth | null = null;
   private initialCameraPositioned: boolean = false;
+  private earthTextureLoaded = false;
+  private minTimeElapsed = false;
   private readonly clock = new THREE.Clock();
   private preGeneratedConfigs: FlightConfig[] = [];
   private minLoadingTimeoutId: number | null = null;
@@ -296,7 +298,7 @@ export class App {
     this.stars.addToScene(this.scene);
 
     this.earth = new Earth(EARTH_RADIUS, () => {
-      window.earthTextureLoaded = true;
+      this.earthTextureLoaded = true;
       this.checkReadyToStart();
     });
     this.earth.addToScene(this.scene);
@@ -432,8 +434,6 @@ export class App {
 
     this.guiControls = this.controlsManager.getControls();
     this.earthControlsManager?.initializeFromGui(this.guiControls);
-    window.guiControlsInstance = this.controlsManager;
-
     document.querySelectorAll(".dg.ac").forEach((container) => {
       (container as HTMLElement).style.display = "none";
     });
@@ -479,8 +479,8 @@ export class App {
   }
 
   private prepareUi(): void {
-    window.earthTextureLoaded = false;
-    window.minTimeElapsed = false;
+    this.earthTextureLoaded = false;
+    this.minTimeElapsed = false;
 
     this.uiManager.createLoadingScreen();
     this.uiManager.createFooter();
@@ -488,7 +488,7 @@ export class App {
     this.uiManager.updateCoordinateDisplay(this.camera, this.earth);
 
     this.minLoadingTimeoutId = window.setTimeout(() => {
-      window.minTimeElapsed = true;
+      this.minTimeElapsed = true;
       this.checkReadyToStart();
     }, 2000);
   }
@@ -546,7 +546,7 @@ export class App {
   }
 
   private checkReadyToStart(): void {
-    if (window.earthTextureLoaded && window.minTimeElapsed) {
+    if (this.earthTextureLoaded && this.minTimeElapsed) {
       this.setInitialCameraPosition();
     }
   }
@@ -1076,8 +1076,4 @@ export class App {
     return (manager && manager.controllers) || {};
   }
 
-  private getGuiControlsState(): any {
-    const manager = this.getControlsManagerUnsafe();
-    return manager ? manager.guiControls : null;
-  }
 }
