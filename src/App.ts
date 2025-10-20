@@ -210,9 +210,15 @@ export class App {
       params: this.params,
       getMergedCurves: () => this.mergedCurves,
       getFlightCount: () => this.flights.length,
-      syncDashSize: (value: number) => this.syncDashSizeWithControls(value),
-      syncGapSize: (value: number) => this.syncGapSizeWithControls(value),
-      syncHidePath: (value: boolean) => this.syncHidePathWithControls(value),
+      syncDashSize: (value: number) => {
+        this.controlsManager?.syncDashSize(value);
+      },
+      syncGapSize: (value: number) => {
+        this.controlsManager?.syncGapSize(value);
+      },
+      syncHidePath: (value: boolean) => {
+        this.controlsManager?.syncHidePath(value);
+      },
     });
 
     this.flightControlsManager = new FlightControlsManager({
@@ -237,10 +243,12 @@ export class App {
       updatePathVisibility: () => this.flightPathManager.applyVisibility(),
       updatePlaneVisibility: () =>
         this.planeControlsManager.setHidePlane(this.params.hidePlane),
-      syncFlightCount: (value: number) =>
-        this.syncFlightCountWithControls(value),
-      syncReturnFlight: (value: boolean) =>
-        this.syncReturnFlightWithControls(value),
+      syncFlightCount: (value: number) => {
+        this.controlsManager?.syncFlightCount(value);
+      },
+      syncReturnFlight: (value: boolean) => {
+        this.controlsManager?.syncReturnFlight(value);
+      },
     });
 
     this.planeControlsManager = new PlaneControlsManager({
@@ -252,14 +260,24 @@ export class App {
       initializeFlights: () => this.initializeFlights(),
       fallbackPlaneColor: DEFAULT_PLANE_COLOR,
       parsePlaneColor: (value, fallback) => parseHexColor(value, fallback),
-      syncPlaneSize: (value: number) => this.syncPlaneSizeWithControls(value),
-      syncPlaneColor: (value: number) => this.syncPlaneColorWithControls(value),
-      syncPaneStyle: (value: string) => this.syncPaneStyleWithControls(value),
-      syncAnimationSpeed: (value: number) =>
-        this.syncAnimationSpeedWithControls(value),
-      syncElevationOffset: (value: number) =>
-        this.syncElevationOffsetWithControls(value),
-      syncHidePlane: (value: boolean) => this.syncHidePlaneWithControls(value),
+      syncPlaneSize: (value: number) => {
+        this.controlsManager?.syncPlaneSize(value);
+      },
+      syncPlaneColor: (value: number) => {
+        this.controlsManager?.syncPlaneColor(value);
+      },
+      syncPaneStyle: (value: string) => {
+        this.controlsManager?.syncPaneStyle(value);
+      },
+      syncAnimationSpeed: (value: number) => {
+        this.controlsManager?.syncAnimationSpeed(value);
+      },
+      syncElevationOffset: (value: number) => {
+        this.controlsManager?.syncPlaneElevation(value);
+      },
+      syncHidePlane: (value: boolean) => {
+        this.controlsManager?.syncHidePlane(value);
+      },
     });
 
     this.preGenerateFlightConfigs();
@@ -816,140 +834,6 @@ export class App {
     this.flightPathManager.applyVisibility();
     this.planeControlsManager.setHidePlane(this.params.hidePlane);
     this.flightControlsManager.setReturnFlight(this.params.returnFlight);
-  }
-
-  private syncDashSizeWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setDashSize === "function" &&
-      guiControls?.dashSize !== value
-    ) {
-      manager.setDashSize(value);
-    }
-  }
-
-  private syncGapSizeWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setGapSize === "function" &&
-      guiControls?.gapSize !== value
-    ) {
-      manager.setGapSize(value);
-    }
-  }
-
-  private syncHidePathWithControls(value: boolean): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setHidePath === "function" &&
-      guiControls?.hidePath !== value
-    ) {
-      manager.setHidePath(value);
-    }
-  }
-
-  private syncFlightCountWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setFlightCount === "function" &&
-      guiControls?.numFlights !== value
-    ) {
-      manager.setFlightCount(value);
-    }
-  }
-
-  private syncReturnFlightWithControls(value: boolean): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setReturnFlight === "function" &&
-      guiControls?.returnFlight !== value
-    ) {
-      manager.setReturnFlight(value);
-    }
-  }
-
-  private syncPlaneSizeWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setPlaneSize === "function" &&
-      guiControls?.planeSize !== value
-    ) {
-      manager.setPlaneSize(value);
-    }
-  }
-
-  private syncPlaneColorWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    if (manager && typeof manager.setPlaneColor === "function") {
-      const formatted = `#${value.toString(16).padStart(6, "0")}`;
-      if (manager.guiControls?.planeColor !== formatted) {
-        manager.setPlaneColor(value);
-      }
-    }
-  }
-
-  private syncPaneStyleWithControls(value: string): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setPaneStyle === "function" &&
-      guiControls?.paneStyle !== value
-    ) {
-      manager.setPaneStyle(value);
-    }
-  }
-
-  private syncAnimationSpeedWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setAnimationSpeed === "function" &&
-      guiControls?.animationSpeed !== value
-    ) {
-      manager.setAnimationSpeed(value);
-    }
-  }
-
-  private syncElevationOffsetWithControls(value: number): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setPlaneElevation === "function" &&
-      guiControls?.elevationOffset !== value
-    ) {
-      manager.setPlaneElevation(value);
-    }
-  }
-
-  private syncHidePlaneWithControls(value: boolean): void {
-    const manager = this.getControlsManagerUnsafe();
-    const guiControls = manager?.guiControls;
-    if (
-      manager &&
-      typeof manager.setHidePlane === "function" &&
-      guiControls?.hidePlane !== value
-    ) {
-      manager.setHidePlane(value);
-    }
-  }
-
-  private getControlsManagerUnsafe(): any {
-    return this.controlsManager as any;
   }
 
 }

@@ -589,11 +589,27 @@ export class Controls {
     }
   }
 
+  public syncPlaneSize(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.planeSize !== value) {
+      this.setPlaneSize(value);
+    }
+  }
+
   public setPlaneColor(value: string | number | ColorObject): void {
     const formatted = this.formatColor(value);
     this.guiControls.planeColor = formatted;
     if (this.controllers.planeColor) {
       this.controllers.planeColor.updateDisplay();
+    }
+  }
+
+  public syncPlaneColor(value: string | number | ColorObject): void {
+    const formatted = this.formatColor(value);
+    if (this.guiControls.planeColor !== formatted) {
+      this.setPlaneColor(formatted);
     }
   }
 
@@ -607,6 +623,15 @@ export class Controls {
     }
   }
 
+  public syncAnimationSpeed(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.animationSpeed !== value) {
+      this.setAnimationSpeed(value);
+    }
+  }
+
   public setPlaneElevation(value: number): void {
     if (typeof value !== "number") {
       return;
@@ -614,6 +639,15 @@ export class Controls {
     this.guiControls.elevationOffset = value;
     if (this.controllers.elevationOffset) {
       this.controllers.elevationOffset.updateDisplay();
+    }
+  }
+
+  public syncPlaneElevation(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.elevationOffset !== value) {
+      this.setPlaneElevation(value);
     }
   }
 
@@ -627,11 +661,27 @@ export class Controls {
     }
   }
 
+  public syncPaneStyle(value: string): void {
+    if (typeof value !== "string") {
+      return;
+    }
+    if (this.guiControls.paneStyle !== value) {
+      this.setPaneStyle(value);
+    }
+  }
+
   public setHidePlane(value: unknown): void {
     const boolValue = Boolean(value);
     this.guiControls.hidePlane = boolValue;
     if (this.controllers.hidePlane) {
       this.controllers.hidePlane.updateDisplay();
+    }
+  }
+
+  public syncHidePlane(value: unknown): void {
+    const boolValue = Boolean(value);
+    if (this.guiControls.hidePlane !== boolValue) {
+      this.setHidePlane(boolValue);
     }
   }
 
@@ -645,6 +695,15 @@ export class Controls {
     }
   }
 
+  public syncDashSize(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.dashSize !== value) {
+      this.setDashSize(value);
+    }
+  }
+
   public setGapSize(value: number): void {
     if (typeof value !== "number") {
       return;
@@ -655,11 +714,27 @@ export class Controls {
     }
   }
 
+  public syncGapSize(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.gapSize !== value) {
+      this.setGapSize(value);
+    }
+  }
+
   public setHidePath(value: unknown): void {
     const boolValue = Boolean(value);
     this.guiControls.hidePath = boolValue;
     if (this.controllers.hidePath) {
       this.controllers.hidePath.updateDisplay();
+    }
+  }
+
+  public syncHidePath(value: unknown): void {
+    const boolValue = Boolean(value);
+    if (this.guiControls.hidePath !== boolValue) {
+      this.setHidePath(boolValue);
     }
   }
 
@@ -673,11 +748,27 @@ export class Controls {
     }
   }
 
+  public syncFlightCount(value: number): void {
+    if (typeof value !== "number") {
+      return;
+    }
+    if (this.guiControls.numFlights !== value) {
+      this.setFlightCount(value);
+    }
+  }
+
   public setReturnFlight(value: unknown): void {
     const boolValue = Boolean(value);
     this.guiControls.returnFlight = boolValue;
     if (this.controllers.returnFlight) {
       this.controllers.returnFlight.updateDisplay();
+    }
+  }
+
+  public syncReturnFlight(value: unknown): void {
+    const boolValue = Boolean(value);
+    if (this.guiControls.returnFlight !== boolValue) {
+      this.setReturnFlight(boolValue);
     }
   }
 
