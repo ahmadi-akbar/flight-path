@@ -77,12 +77,12 @@ export class App {
   private svgTexturePromise:
     | Promise<{ texture: THREE.Texture; info: SvgAtlasInfo }>
     | null = null;
-  private controlsManager: Controls | null = null;
+  private controlsManager!: Controls;
   private guiControls: any = null;
   private earthControlsManager: EarthControlsManager | null = null;
   private readonly params: GuiParams;
-  private readonly flightPathManager: FlightPathManager;
-  private readonly flightControlsManager: FlightControlsManager;
+  private flightPathManager!: FlightPathManager;
+  private flightControlsManager!: FlightControlsManager;
   private planeControlsManager!: PlaneControlsManager;
   private ambientLight: THREE.AmbientLight | null = null;
   private directionalLight: THREE.DirectionalLight | null = null;
@@ -206,86 +206,14 @@ export class App {
       returnFlight: true,
     } as GuiParams;
 
-    this.flightPathManager = new FlightPathManager({
-      params: this.params,
-      getMergedCurves: () => this.mergedCurves,
-      getFlightCount: () => this.flights.length,
-      syncDashSize: (value: number) => {
-        this.controlsManager?.syncDashSize(value);
-      },
-      syncGapSize: (value: number) => {
-        this.controlsManager?.syncGapSize(value);
-      },
-      syncHidePath: (value: boolean) => {
-        this.controlsManager?.syncHidePath(value);
-      },
-    });
+    this.controlsManager = new Controls();
 
-    this.flightControlsManager = new FlightControlsManager({
-      params: this.params,
-      maxFlights: MAX_FLIGHTS,
-      getFlights: () => this.flights,
-      getPreGeneratedConfigs: () => this.preGeneratedConfigs,
-      getMergedCurves: () => this.mergedCurves,
-      getMergedPanes: () => this.mergedPanes,
-      ensurePlaneDefaults: (config?: Partial<FlightConfig>) =>
-        this.ensurePlaneDefaults(config),
-      assignRandomPlane: (config?: Partial<FlightConfig>) =>
-        this.assignRandomPlane(config),
-      resolvePaneColor: (config?: Partial<FlightConfig>) =>
-        this.resolvePaneColor(config),
-      resolveAnimationSpeed: (config: Partial<FlightConfig> = {}) =>
-        this.planeControlsManager.resolveAnimationSpeed(
-          config as Record<string, any>,
-        ),
-      createFlightFromConfig: (config: FlightConfig, index: number) =>
-        this.createFlightFromConfig(config, index),
-      updatePathVisibility: () => this.flightPathManager.applyVisibility(),
-      updatePlaneVisibility: () =>
-        this.planeControlsManager.setHidePlane(this.params.hidePlane),
-      syncFlightCount: (value: number) => {
-        this.controlsManager?.syncFlightCount(value);
-      },
-      syncReturnFlight: (value: boolean) => {
-        this.controlsManager?.syncReturnFlight(value);
-      },
-    });
-
-    this.planeControlsManager = new PlaneControlsManager({
-      params: this.params,
-      getFlights: () => this.flights,
-      getPreGeneratedConfigs: () => this.preGeneratedConfigs,
-      getMergedPanes: () => this.mergedPanes,
-      loadSvgTexture: () => this.loadSvgTexture(),
-      initializeFlights: () => this.initializeFlights(),
-      fallbackPlaneColor: DEFAULT_PLANE_COLOR,
-      parsePlaneColor: (value, fallback) => parseHexColor(value, fallback),
-      syncPlaneSize: (value: number) => {
-        this.controlsManager?.syncPlaneSize(value);
-      },
-      syncPlaneColor: (value: number) => {
-        this.controlsManager?.syncPlaneColor(value);
-      },
-      syncPaneStyle: (value: string) => {
-        this.controlsManager?.syncPaneStyle(value);
-      },
-      syncAnimationSpeed: (value: number) => {
-        this.controlsManager?.syncAnimationSpeed(value);
-      },
-      syncElevationOffset: (value: number) => {
-        this.controlsManager?.syncPlaneElevation(value);
-      },
-      syncHidePlane: (value: boolean) => {
-        this.controlsManager?.syncHidePlane(value);
-      },
-    });
-
-    this.preGenerateFlightConfigs();
-    this.initializeFlights();
     this.addSpaceEnvironment();
     this.setupLighting();
     this.setupEarthControls();
     this.setupGlobalControls();
+    this.preGenerateFlightConfigs();
+    this.initializeFlights();
     this.updateLighting();
     this.updateSunPosition();
     this.prepareUi();
@@ -348,7 +276,31 @@ export class App {
   }
 
   private setupGlobalControls(): void {
-    this.controlsManager = new Controls();
+    if (!this.controlsManager) {
+      this.controlsManager = new Controls();
+    }
+
+    const managerDependencies = {
+      maxFlights: MAX_FLIGHTS,
+      getFlights: () => this.flights,
+      getPreGeneratedConfigs: () => this.preGeneratedConfigs,
+      getFlightCount: () => this.flights.length,
+      getMergedCurves: () => this.mergedCurves,
+      getMergedPanes: () => this.mergedPanes,
+      ensurePlaneDefaults: (config?: Partial<FlightConfig>) =>
+        this.ensurePlaneDefaults(config),
+      assignRandomPlane: (config?: Partial<FlightConfig>) =>
+        this.assignRandomPlane(config),
+      resolvePaneColor: (config?: Partial<FlightConfig>) =>
+        this.resolvePaneColor(config),
+      createFlightFromConfig: (config: FlightConfig, index: number) =>
+        this.createFlightFromConfig(config, index),
+      loadSvgTexture: () => this.loadSvgTexture(),
+      initializeFlights: () => this.initializeFlights(),
+      fallbackPlaneColor: DEFAULT_PLANE_COLOR,
+      parsePlaneColor: (value: any, fallback: number) =>
+        parseHexColor(value, fallback),
+    };
 
     const resetSunPosition = (): void => {
       if (this.directionalLight) {
@@ -360,15 +312,13 @@ export class App {
     this.controlsManager.initialize(
       {
         params: this.params,
-        planeControlsManager: this.planeControlsManager,
-        flightPathManager: this.flightPathManager,
-        flightControlsManager: this.flightControlsManager,
+        managerDependencies,
         earthControlsManager: this.earthControlsManager,
         resetSunPosition,
       },
       {
         planeSize: this.params.planeSize,
-        planeSizeRange: { min: 50, max: 500 },
+        planeSizeRange: { min: 5, max: 500 },
         planeColor: this.params.planeColor,
         animationSpeed: this.params.animationSpeed,
         speedRange: { min: 0.01, max: 0.5, step: 0.01 },
@@ -387,6 +337,19 @@ export class App {
         returnFlight: this.params.returnFlight,
       },
     );
+
+    const flightPathManager = this.controlsManager.getFlightPathManager();
+    const planeControlsManager = this.controlsManager.getPlaneControlsManager();
+    const flightControlsManager =
+      this.controlsManager.getFlightControlsManager();
+
+    if (!flightPathManager || !planeControlsManager || !flightControlsManager) {
+      throw new Error("Failed to initialize core managers");
+    }
+
+    this.flightPathManager = flightPathManager;
+    this.planeControlsManager = planeControlsManager;
+    this.flightControlsManager = flightControlsManager;
 
     this.guiControls = this.controlsManager.getControls();
     this.earthControlsManager?.initializeFromGui(this.guiControls);
