@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import type { Geolocation, Flight as FlightData } from "../common/Data.ts";
 import { latLngToVector3 } from "../common/Utils.ts";
+import { Flight } from "./Flight.ts";
+import { Curves } from "../curves/Curves.ts";
+import { PlanesShader } from "../planes/PlanesShader.ts";
 import type {
   Bounds,
   RandomCurveOptions,
@@ -671,5 +674,183 @@ export class FlightUtils {
       defaultPlaneColor,
       parseHexColor,
     );
+  }
+
+  // Note: createFlightFromConfig moved back to main.ts due to complex type dependencies
+
+  /**
+   * Pre-generate flight configurations for stability
+   * @param dataFlights - Array of flight data
+   * @param maxFlights - Maximum number of flights
+   * @param params - GUI parameters
+   * @param earthRadius - Earth radius
+   * @param minCurveAltitude - Minimum curve altitude
+   * @param planeEntries - Array of plane entries
+   * @param defaultPlaneColor - Default plane color
+   * @param parseHexColor - Function to parse hex colors
+   * @param createDataFlightConfigFn - Function to create data flight config
+   * @param assignRandomPlaneFn - Function to assign random plane
+   * @returns Array of pre-generated flight configurations
+   */
+  static preGenerateFlightConfigs(
+    dataFlights: FlightData[],
+    maxFlights: number,
+    params: any,
+    earthRadius: number,
+    minCurveAltitude: number,
+    planeEntries: PlaneEntry[],
+    defaultPlaneColor: number,
+    parseHexColor: (value: any, fallback: number) => number,
+    createDataFlightConfigFn: (entry: FlightData) => FlightConfig | null,
+    assignRandomPlaneFn: (config: Partial<FlightConfig>) => FlightConfig,
+  ): FlightConfig[] {
+    const preGeneratedConfigs: FlightConfig[] = [];
+
+    if (Array.isArray(dataFlights) && dataFlights.length > 0) {
+      dataFlights.forEach((flightEntry) => {
+        const config = createDataFlightConfigFn(flightEntry);
+        if (!config) {
+          return;
+        }
+
+        const configWithPlane = this.ensurePlaneDefaults(
+          config,
+          planeEntries,
+          defaultPlaneColor,
+          parseHexColor,
+        );
+        const normalizedPoints = this.normalizeControlPoints(
+          configWithPlane.controlPoints,
+          earthRadius,
+          minCurveAltitude,
+        );
+
+        preGeneratedConfigs.push({
+          ...configWithPlane,
+          controlPoints: normalizedPoints,
+          elevationOffset:
+            configWithPlane.elevationOffset !== undefined
+              ? configWithPlane.elevationOffset
+              : params.elevationOffset,
+          paneTextureIndex: configWithPlane.paneTextureIndex,
+          paneColor: configWithPlane.paneColor,
+          planeInfo: configWithPlane.planeInfo,
+          _randomSpeed:
+            typeof configWithPlane.animationSpeed === "number"
+              ? configWithPlane.animationSpeed
+              : undefined,
+          returnFlight: params.returnFlight,
+        });
+      });
+
+      return preGeneratedConfigs;
+    }
+
+    for (let i = 0; i < maxFlights; i++) {
+      let config = this.generateRandomFlightConfig({
+        segmentCount: params.segmentCount,
+        tiltMode: params.tiltMode,
+        numControlPoints: 2,
+      });
+      config = assignRandomPlaneFn({
+        ...config,
+        elevationOffset: params.elevationOffset,
+        flightData: null,
+      });
+      const normalizedPoints = this.normalizeControlPoints(
+        config.controlPoints,
+        earthRadius,
+        minCurveAltitude,
+      );
+      preGeneratedConfigs.push({
+        ...config,
+        controlPoints: normalizedPoints,
+        elevationOffset: config.elevationOffset,
+        paneTextureIndex: config.paneTextureIndex,
+        paneColor: config.paneColor,
+        planeInfo: config.planeInfo,
+        _randomSpeed:
+          typeof config.animationSpeed === "number"
+            ? config.animationSpeed
+            : undefined,
+        returnFlight: params.returnFlight,
+        flightData: null,
+      });
+    }
+
+    return preGeneratedConfigs;
+  }
+
+  /**
+   * Randomize all flight curves
+   * @param flights - Array of existing flights
+   * @param preGeneratedConfigs - Array of pre-generated configs (will be modified)
+   * @param params - GUI parameters
+   * @param earthRadius - Earth radius
+   * @param minCurveAltitude - Minimum curve altitude
+   * @param assignRandomPlaneFn - Function to assign random plane
+   * @param resolvePaneColorFn - Function to resolve pane color
+   * @param resolveAnimationSpeedFn - Function to resolve animation speed
+   * @param mergedCurves - Merged curves renderer
+   */
+  static randomizeAllFlightCurves(
+    flights: Flight[],
+    preGeneratedConfigs: FlightConfig[],
+    params: any,
+    earthRadius: number,
+    minCurveAltitude: number,
+    assignRandomPlaneFn: (config: Partial<FlightConfig>) => FlightConfig,
+    resolvePaneColorFn: (config: Partial<FlightConfig>) => number,
+    resolveAnimationSpeedFn: (config: Record<string, any>) => number,
+    mergedCurves: Curves | null,
+  ): void {
+    flights.forEach((flight, index) => {
+      const randomConfig = this.generateRandomFlightConfig({
+        numControlPoints: 2,
+      });
+      const normalizedPoints = this.normalizeControlPoints(
+        randomConfig.controlPoints,
+        earthRadius,
+        minCurveAltitude,
+      );
+
+      const existingConfig = preGeneratedConfigs[index] || {};
+      let updatedConfig: FlightConfig = {
+        ...existingConfig,
+        ...randomConfig,
+        controlPoints: normalizedPoints,
+        segmentCount: params.segmentCount,
+        curveColor: randomConfig.curveColor,
+        elevationOffset:
+          (existingConfig as any).elevationOffset !== undefined
+            ? (existingConfig as any).elevationOffset
+            : params.elevationOffset,
+        flightData: (existingConfig as any).flightData ?? null,
+        planeInfo: null,
+        paneTextureIndex: undefined,
+        paneColor: undefined,
+      };
+      updatedConfig = assignRandomPlaneFn(updatedConfig);
+      updatedConfig._randomSpeed = params.randomSpeed
+        ? randomConfig.animationSpeed
+        : undefined;
+      updatedConfig.returnFlight = params.returnFlight;
+      preGeneratedConfigs[index] = updatedConfig;
+
+      flight.setFlightData(updatedConfig.flightData);
+      flight.setControlPoints(this.cloneControlPoints(normalizedPoints));
+      flight.setPaneElevation(updatedConfig.elevationOffset);
+      flight.setPaneTextureIndex(updatedConfig.paneTextureIndex);
+      flight.setCurveColor(updatedConfig.curveColor);
+      const paneColor = resolvePaneColorFn(updatedConfig);
+      flight.setPaneColor(paneColor);
+      const speed = resolveAnimationSpeedFn(updatedConfig);
+      flight.setAnimationSpeed(speed);
+      flight.setReturnFlight(params.returnFlight);
+    });
+
+    if (mergedCurves) {
+      mergedCurves.applyUpdates();
+    }
   }
 }

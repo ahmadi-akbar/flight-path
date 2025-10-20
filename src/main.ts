@@ -308,74 +308,18 @@ function createDataFlightConfig(entry: FlightData): FlightConfig | null {
 
 // Pre-generate flight configurations for stability
 function preGenerateFlightConfigs(): void {
-  preGeneratedConfigs = [];
-
-  if (Array.isArray(dataFlights) && dataFlights.length > 0) {
-    dataFlights.forEach((flightEntry) => {
-      const config = createDataFlightConfig(flightEntry);
-      if (!config) {
-        return;
-      }
-
-      const configWithPlane = ensurePlaneDefaults(config);
-      const normalizedPoints = FlightUtils.normalizeControlPoints(
-        configWithPlane.controlPoints,
-        EARTH_RADIUS,
-        MIN_CURVE_ALTITUDE,
-      );
-
-      preGeneratedConfigs.push({
-        ...configWithPlane,
-        controlPoints: normalizedPoints,
-        elevationOffset:
-          configWithPlane.elevationOffset !== undefined
-            ? configWithPlane.elevationOffset
-            : params.elevationOffset,
-        paneTextureIndex: configWithPlane.paneTextureIndex,
-        paneColor: configWithPlane.paneColor,
-        planeInfo: configWithPlane.planeInfo,
-        _randomSpeed:
-          typeof configWithPlane.animationSpeed === "number"
-            ? configWithPlane.animationSpeed
-            : undefined,
-        returnFlight: params.returnFlight,
-      });
-    });
-
-    return;
-  }
-
-  for (let i = 0; i < MAX_FLIGHTS; i++) {
-    let config = FlightUtils.generateRandomFlightConfig({
-      segmentCount: params.segmentCount,
-      tiltMode: params.tiltMode,
-      numControlPoints: 2,
-    });
-    config = assignRandomPlane({
-      ...config,
-      elevationOffset: params.elevationOffset,
-      flightData: null,
-    });
-    const normalizedPoints = FlightUtils.normalizeControlPoints(
-      config.controlPoints,
-      EARTH_RADIUS,
-      MIN_CURVE_ALTITUDE,
-    );
-    preGeneratedConfigs.push({
-      ...config,
-      controlPoints: normalizedPoints,
-      elevationOffset: config.elevationOffset,
-      paneTextureIndex: config.paneTextureIndex,
-      paneColor: config.paneColor,
-      planeInfo: config.planeInfo,
-      _randomSpeed:
-        typeof config.animationSpeed === "number"
-          ? config.animationSpeed
-          : undefined,
-      returnFlight: params.returnFlight,
-      flightData: null,
-    });
-  }
+  preGeneratedConfigs = FlightUtils.preGenerateFlightConfigs(
+    dataFlights,
+    MAX_FLIGHTS,
+    params,
+    EARTH_RADIUS,
+    MIN_CURVE_ALTITUDE,
+    planeEntries,
+    DEFAULT_PLANE_COLOR,
+    parseHexColor,
+    createDataFlightConfig,
+    assignRandomPlane,
+  );
 }
 
 function checkReadyToStart(): void {
@@ -864,54 +808,17 @@ function updateReturnFlight(value: boolean): void {
 }
 
 function randomizeAllFlightCurves(): void {
-  flights.forEach((flight, index) => {
-    const randomConfig = FlightUtils.generateRandomFlightConfig({
-      numControlPoints: 2,
-    });
-    const normalizedPoints = FlightUtils.normalizeControlPoints(
-      randomConfig.controlPoints,
-      EARTH_RADIUS,
-      MIN_CURVE_ALTITUDE,
-    );
-
-    const existingConfig = preGeneratedConfigs[index] || {};
-    let updatedConfig: FlightConfig = {
-      ...existingConfig,
-      ...randomConfig,
-      controlPoints: normalizedPoints,
-      segmentCount: params.segmentCount,
-      curveColor: randomConfig.curveColor,
-      elevationOffset:
-        existingConfig.elevationOffset !== undefined
-          ? existingConfig.elevationOffset
-          : params.elevationOffset,
-      flightData: existingConfig.flightData ?? null,
-      planeInfo: null,
-      paneTextureIndex: undefined,
-      paneColor: undefined,
-    };
-    updatedConfig = assignRandomPlane(updatedConfig);
-    updatedConfig._randomSpeed = params.randomSpeed
-      ? randomConfig.animationSpeed
-      : undefined;
-    updatedConfig.returnFlight = params.returnFlight;
-    preGeneratedConfigs[index] = updatedConfig;
-
-    flight.setFlightData(updatedConfig.flightData);
-    flight.setControlPoints(FlightUtils.cloneControlPoints(normalizedPoints));
-    flight.setPaneElevation(updatedConfig.elevationOffset);
-    flight.setPaneTextureIndex(updatedConfig.paneTextureIndex);
-    flight.setCurveColor(updatedConfig.curveColor);
-    const paneColor = resolvePaneColor(updatedConfig);
-    flight.setPaneColor(paneColor);
-    const speed = planeControlsManager.resolveAnimationSpeed(updatedConfig);
-    flight.setAnimationSpeed(speed);
-    flight.setReturnFlight(params.returnFlight);
-  });
-
-  if (mergedCurves) {
-    mergedCurves.applyUpdates();
-  }
+  FlightUtils.randomizeAllFlightCurves(
+    flights,
+    preGeneratedConfigs,
+    params,
+    EARTH_RADIUS,
+    MIN_CURVE_ALTITUDE,
+    assignRandomPlane,
+    resolvePaneColor,
+    (config) => planeControlsManager.resolveAnimationSpeed(config),
+    mergedCurves,
+  );
 }
 
 // Pre-generate all flight configurations on startup
