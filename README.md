@@ -1,6 +1,6 @@
 # Flight Path Visualization
 
-A stunning 3D interactive flight path visualization built with Three.js, featuring real-time flight simulation around a photorealistic Earth with GPU-accelerated rendering for optimal performance.
+A stunning 3D interactive flight path visualization built with Three.js, featuring flight simulation around a photorealistic Earth with GPU-accelerated rendering for optimal performance.
 
 https://github.com/user-attachments/assets/accd0313-8967-42b9-b41a-43e3467a78f1
 
@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/accd0313-8967-42b9-b41a-43e3467a78f1
 
 ### ✈️ Flight Simulation
 
-- **Real flight data visualization** or procedurally generated paths
+- **Simulate flight data visualization** or procedurally generated paths
 - **GPU-accelerated rendering** supporting thousands of simultaneous flights
 - **Dynamic flight paths** with realistic parabolic trajectories
 - **Customizable aircraft models** with SVG-based plane designs
