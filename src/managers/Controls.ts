@@ -17,6 +17,20 @@ import type {
   KnownControllerKey,
   Controllers,
 } from "../common/Types.js";
+import type { GuiParams } from "../common/Types.js";
+import type { PlaneControlsManager } from "./PlaneControlsManager.ts";
+import type { FlightPathManager } from "./FlightPathManager.ts";
+import type { FlightControlsManager } from "./FlightControlsManager.ts";
+import type { EarthControlsManager } from "./EarthControlsManager.ts";
+
+interface ControlsContext {
+  params: GuiParams;
+  planeControlsManager: PlaneControlsManager;
+  flightPathManager: FlightPathManager;
+  flightControlsManager: FlightControlsManager;
+  earthControlsManager?: EarthControlsManager | null;
+  resetSunPosition: () => void;
+}
 
 /**
  * Controls class manages all GUI controls and their interactions
@@ -26,6 +40,7 @@ export class Controls {
   private controllers: Controllers = {};
   private guiControls: GuiControls;
   private callbacks: ControlsCallbacks = {};
+  private context: ControlsContext | null = null;
 
   constructor() {
     this.guiControls = {
@@ -121,6 +136,110 @@ export class Controls {
     });
     this.setupEarthControls();
     this.setupBrightnessControls();
+  }
+
+  /**
+   * Initialize controls using application managers. This wires up default
+   * callbacks so callers do not need to provide manual bindings.
+   */
+  public initialize(
+    context: ControlsContext,
+    options: ControlsOptions = {},
+  ): void {
+    this.context = context;
+    const callbacks = this.createCallbacksFromContext();
+    this.setup(callbacks, options);
+  }
+
+  private createCallbacksFromContext(): ControlsCallbacks {
+    if (!this.context) {
+      return {};
+    }
+
+    const {
+      params,
+      planeControlsManager,
+      flightPathManager,
+      flightControlsManager,
+      earthControlsManager,
+      resetSunPosition,
+    } = this.context;
+
+    return {
+      onDayNightEffectChange: (value: boolean) => {
+        earthControlsManager?.toggleDayNightEffect(value);
+      },
+      onAtmosphereEffectChange: (value: boolean) => {
+        earthControlsManager?.toggleAtmosphereEffect(value);
+      },
+      onResetSunPosition: () => {
+        resetSunPosition();
+      },
+      onDayBrightnessChange: (value: number) => {
+        earthControlsManager?.setDayBrightness(value);
+      },
+      onNightBrightnessChange: (value: number) => {
+        earthControlsManager?.setNightBrightness(value);
+      },
+      onRealTimeSunChange: (value: boolean) => {
+        if (value) {
+          earthControlsManager?.enableRealTimeSun();
+        } else {
+          earthControlsManager?.disableRealTimeSun();
+        }
+        const { timeDisplay, timeSlider, realTimeSun } = this.controllers;
+        timeDisplay?.updateDisplay();
+        timeSlider?.updateDisplay();
+        realTimeSun?.updateDisplay();
+      },
+      onTimeSliderChange: (value: number) => {
+        earthControlsManager?.setSimulatedTime(value);
+        const { timeDisplay, realTimeSun } = this.controllers;
+        timeDisplay?.updateDisplay();
+        realTimeSun?.updateDisplay();
+      },
+      onTimeDisplayChange: (value: string) => {
+        if (earthControlsManager?.setTimeDisplay(value)) {
+          const { timeSlider, realTimeSun } = this.controllers;
+          timeSlider?.updateDisplay();
+          realTimeSun?.updateDisplay();
+        }
+      },
+      onPlaneSizeChange: (value: number) => {
+        planeControlsManager.setPlaneSize(value);
+      },
+      onPlaneColorChange: (value: string) => {
+        planeControlsManager.setPlaneColor(value);
+      },
+      onAnimationSpeedChange: (value: number) => {
+        params.randomSpeed = false;
+        planeControlsManager.setAnimationSpeed(value);
+      },
+      onPlaneElevationChange: (value: number) => {
+        planeControlsManager.setElevationOffset(value);
+      },
+      onPaneStyleChange: (value: string) => {
+        planeControlsManager.setPaneStyle(value);
+      },
+      onHidePlaneChange: (value: boolean) => {
+        planeControlsManager.setHidePlane(value);
+      },
+      onDashSizeChange: (value: number) => {
+        flightPathManager.setDashSize(value);
+      },
+      onGapSizeChange: (value: number) => {
+        flightPathManager.setGapSize(value);
+      },
+      onHidePathChange: (value: boolean) => {
+        flightPathManager.setHidePath(value);
+      },
+      onFlightCountChange: (value: number) => {
+        flightControlsManager.updateFlightCount(value);
+      },
+      onReturnFlightChange: (value: boolean) => {
+        flightControlsManager.setReturnFlight(value);
+      },
+    };
   }
 
   private setupEarthControls(): void {

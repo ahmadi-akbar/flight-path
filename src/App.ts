@@ -332,83 +332,21 @@ export class App {
   private setupGlobalControls(): void {
     this.controlsManager = new Controls();
 
-    this.controlsManager.setup(
-      {
-        onDayNightEffectChange: (value: boolean) => {
-          this.earthControlsManager?.toggleDayNightEffect(value);
-        },
-        onAtmosphereEffectChange: (value: boolean) => {
-          this.earthControlsManager?.toggleAtmosphereEffect(value);
-        },
-        onResetSunPosition: () => {
-          this.directionalLight?.position.set(0, 1000, 1000);
-          this.updateSunPosition();
-        },
-        onDayBrightnessChange: (value: number) => {
-          this.earthControlsManager?.setDayBrightness(value);
-        },
-        onNightBrightnessChange: (value: number) => {
-          this.earthControlsManager?.setNightBrightness(value);
-        },
-        onRealTimeSunChange: (value: boolean) => {
-          if (value) {
-            this.earthControlsManager?.enableRealTimeSun();
-          } else {
-            this.earthControlsManager?.disableRealTimeSun();
-          }
+    const resetSunPosition = (): void => {
+      if (this.directionalLight) {
+        this.directionalLight.position.set(0, 1000, 1000);
+      }
+      this.updateSunPosition();
+    };
 
-          const controllers = this.getGuiControllerMap();
-          controllers.timeDisplay?.updateDisplay();
-          controllers.timeSlider?.updateDisplay();
-          controllers.realTimeSun?.updateDisplay();
-        },
-        onTimeSliderChange: (value: number) => {
-          this.earthControlsManager?.setSimulatedTime(value);
-          const controllers = this.getGuiControllerMap();
-          controllers.timeDisplay?.updateDisplay();
-          controllers.realTimeSun?.updateDisplay();
-        },
-        onTimeDisplayChange: (value: string) => {
-          if (this.earthControlsManager?.setTimeDisplay(value)) {
-            const controllers = this.getGuiControllerMap();
-            controllers.timeSlider?.updateDisplay();
-            controllers.realTimeSun?.updateDisplay();
-          }
-        },
-        onPlaneSizeChange: (value: number) => {
-          this.updatePlaneSize(value);
-        },
-        onPlaneColorChange: (value: string) => {
-          this.updatePlaneColor(value);
-        },
-        onAnimationSpeedChange: (value: number) => {
-          this.params.randomSpeed = false;
-          this.planeControlsManager.setAnimationSpeed(value);
-        },
-        onPlaneElevationChange: (value: number) => {
-          this.planeControlsManager.setElevationOffset(value);
-        },
-        onPaneStyleChange: (value: string) => {
-          this.planeControlsManager.setPaneStyle(value);
-        },
-        onHidePlaneChange: (value: boolean) => {
-          this.planeControlsManager.setHidePlane(value);
-        },
-        onDashSizeChange: (value: number) => {
-          this.updateDashSize(value);
-        },
-        onGapSizeChange: (value: number) => {
-          this.updateGapSize(value);
-        },
-        onHidePathChange: (value: boolean) => {
-          this.updateHidePath(value);
-        },
-        onFlightCountChange: (value: number) => {
-          this.updateFlightCount(value);
-        },
-        onReturnFlightChange: (value: boolean) => {
-          this.updateReturnFlight(value);
-        },
+    this.controlsManager.initialize(
+      {
+        params: this.params,
+        planeControlsManager: this.planeControlsManager,
+        flightPathManager: this.flightPathManager,
+        flightControlsManager: this.flightControlsManager,
+        earthControlsManager: this.earthControlsManager,
+        resetSunPosition,
       },
       {
         planeSize: this.params.planeSize,
@@ -561,14 +499,6 @@ export class App {
     const color = parseHexColor(this.params.planeColor, DEFAULT_PLANE_COLOR);
     config.paneColor = color;
     return color;
-  }
-
-  private applyPaneColorMode(): void {
-    this.flights.forEach((flight, index) => {
-      const config = this.preGeneratedConfigs[index] || {};
-      const color = this.resolvePaneColor(config);
-      flight.setPaneColor(color);
-    });
   }
 
   private updateLighting(): void {
@@ -888,55 +818,6 @@ export class App {
     this.flightControlsManager.setReturnFlight(this.params.returnFlight);
   }
 
-  private updateFlightCount(count: number): void {
-    this.flightControlsManager.updateFlightCount(count);
-  }
-
-  private updateSegmentCount(count: number): void {
-    this.params.segmentCount = count;
-    this.preGenerateFlightConfigs();
-    this.initializeFlights();
-  }
-
-  private updatePlaneSize(size: number): void {
-    this.planeControlsManager.setPlaneSize(size);
-  }
-
-  private updatePlaneColor(color: any): void {
-    this.planeControlsManager.setPlaneColor(color);
-  }
-
-  private updateDashSize(size: number): void {
-    this.flightPathManager.setDashSize(size);
-  }
-
-  private updateGapSize(size: number): void {
-    this.flightPathManager.setGapSize(size);
-  }
-
-  private updateHidePath(value: boolean): void {
-    this.flightPathManager.setHidePath(value);
-  }
-
-  private updateReturnFlight(value: boolean): void {
-    this.flightControlsManager.setReturnFlight(value);
-  }
-
-  private randomizeAllFlightCurves(): void {
-    FlightUtils.randomizeAllFlightCurves(
-      this.flights,
-      this.preGeneratedConfigs,
-      this.params,
-      EARTH_RADIUS,
-      MIN_CURVE_ALTITUDE,
-      (config: Partial<FlightConfig>) => this.assignRandomPlane(config),
-      (config: Partial<FlightConfig>) => this.resolvePaneColor(config),
-      (config: Record<string, any>) =>
-        this.planeControlsManager.resolveAnimationSpeed(config),
-      this.mergedCurves,
-    );
-  }
-
   private syncDashSizeWithControls(value: number): void {
     const manager = this.getControlsManagerUnsafe();
     const guiControls = manager?.guiControls;
@@ -1069,11 +950,6 @@ export class App {
 
   private getControlsManagerUnsafe(): any {
     return this.controlsManager as any;
-  }
-
-  private getGuiControllerMap(): Record<string, any> {
-    const manager = this.getControlsManagerUnsafe();
-    return (manager && manager.controllers) || {};
   }
 
 }
